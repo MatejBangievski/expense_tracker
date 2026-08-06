@@ -18,7 +18,9 @@ spring:
         api-key: ${GEMINI_API_KEY}
         chat:
           model: gemini-3.6-flash
-
+jwt:
+#  treba da se smeni so environment variable, so ne se cuva vo git
+  secret: ${JWT_SECRET:dev-fallback-secret-at-least-32-bytes-long-for-local-testing}
 app:
   ai:
     recommendation:
