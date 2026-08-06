@@ -14,8 +14,11 @@ data class MonthlySaving(
     val user: User = User(),
 
     val savingMonth: LocalDate = LocalDate.now(),
-    val totalIncome: BigDecimal = BigDecimal.ZERO,
+    val totalIncome: BigDecimal? = null,
+    val totalBudgetLimit: BigDecimal = BigDecimal.ZERO,
     val totalSpent: BigDecimal = BigDecimal.ZERO,
     val totalSaved: BigDecimal = BigDecimal.ZERO,
 
+    @Column(columnDefinition = "TEXT")
+    val recommendationMessage: String? = null,
 )
