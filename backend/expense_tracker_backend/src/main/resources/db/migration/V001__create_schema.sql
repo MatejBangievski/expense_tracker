@@ -48,32 +48,27 @@ CREATE INDEX idx_expense_user_category_date ON expense (user_id, category_id, ex
 CREATE INDEX idx_expense_user_date ON expense (user_id, expense_date);
 CREATE INDEX idx_expense_plan ON expense (plan_id);
 
-CREATE TABLE budget (
-                        id              BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-                        user_id         BIGINT NOT NULL REFERENCES app_user(id) ON DELETE CASCADE,
-                        category_id     BIGINT NOT NULL REFERENCES category(id) ON DELETE RESTRICT,
-                        budget_month    DATE NOT NULL,
-                        monthly_limit   NUMERIC(12, 2) NOT NULL,
-                        CONSTRAINT uq_budget_user_month_category UNIQUE (user_id, budget_month, category_id)
-);
-
 CREATE TABLE monthly_saving (
-                                id              BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-                                user_id         BIGINT NOT NULL REFERENCES app_user(id) ON DELETE CASCADE,
-                                saving_month    DATE NOT NULL,
-                                total_income    NUMERIC(12, 2) NOT NULL,
-                                total_spent     NUMERIC(12, 2) NOT NULL,
-                                total_saved     NUMERIC(12, 2) NOT NULL,
+                                id                      BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+                                user_id                 BIGINT NOT NULL REFERENCES app_user(id) ON DELETE CASCADE,
+                                saving_month            DATE NOT NULL,
+                                total_budget_limit      NUMERIC(14, 2) NOT NULL,
+                                total_income            NUMERIC(12, 2),
+                                total_spent             NUMERIC(12, 2) NOT NULL,
+                                total_saved             NUMERIC(12, 2) NOT NULL,
+                                recommendation_message  TEXT,
                                 CONSTRAINT uq_saving_user_month UNIQUE (user_id, saving_month)
 );
 
 CREATE INDEX idx_saving_user_month ON monthly_saving (user_id, saving_month);
 
-CREATE TABLE recommendation_message (
-                                        id              BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-                                        user_id         BIGINT NOT NULL REFERENCES app_user(id) ON DELETE CASCADE,
-                                        message         TEXT NOT NULL,
-                                        model_name      VARCHAR(80)
+CREATE TABLE budget (
+                        id                 BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+                        user_id            BIGINT NOT NULL REFERENCES app_user(id) ON DELETE CASCADE,
+                        category_id        BIGINT NOT NULL REFERENCES category(id) ON DELETE RESTRICT,
+                        monthly_saving_id  BIGINT NOT NULL REFERENCES monthly_saving(id) ON DELETE CASCADE,
+                        monthly_limit      NUMERIC(12, 2) NOT NULL,
+                        actual_spent       NUMERIC(12, 2),
+                        reason             VARCHAR(500),
+                        CONSTRAINT uq_budget_saving_category UNIQUE (monthly_saving_id, category_id)
 );
-
-CREATE INDEX idx_recommendation_user ON recommendation_message (user_id);
