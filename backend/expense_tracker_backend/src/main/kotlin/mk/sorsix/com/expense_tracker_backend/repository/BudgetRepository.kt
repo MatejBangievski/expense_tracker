@@ -1,0 +1,8 @@
+package mk.sorsix.com.expense_tracker_backend.repository
+
+import mk.sorsix.com.expense_tracker_backend.domain.Budget
+import org.springframework.data.jpa.repository.JpaRepository
+
+interface BudgetRepository : JpaRepository<Budget, Long> {
+    fun findByMonthlySavingIdAndCategoryId(monthlySavingId: Long, categoryId: Long): Budget?
+}
