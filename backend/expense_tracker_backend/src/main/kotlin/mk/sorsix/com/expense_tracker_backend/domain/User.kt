@@ -15,11 +15,15 @@ data class User(
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     val id: Long = 0,
+
     val displayName: String = "",
+
     @Column(unique = true, nullable = false)
     val email: String = "",
+
     @Column(nullable = false)
     val passwordHash: String = "",
+
     val monthlySalary: BigDecimal = BigDecimal.ZERO,
     val totalSaved: BigDecimal = BigDecimal.ZERO,
 )
