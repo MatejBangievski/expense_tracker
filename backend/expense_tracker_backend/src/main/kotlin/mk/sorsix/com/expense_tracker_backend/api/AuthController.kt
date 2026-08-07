@@ -59,6 +59,6 @@ class AuthController (private val authService: AuthService) {
         when (authService.logout(request.refreshToken)) {
             is LogoutResult.Success -> ResponseEntity.ok(mapOf("message" to "Logged out"))
             is LogoutResult.TokenNotFound -> ResponseEntity.ok(mapOf("message" to "Logged out"))
-        //namerno isto bodu za da ne se otkrije dali e istecen tokenot ili dali ne postoi
+        //namerno isto bodi za da ne se otkrije dali e istecen tokenot ili dali ne postoi
         }
 }
