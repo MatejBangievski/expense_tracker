@@ -3,6 +3,7 @@ package mk.sorsix.com.expense_tracker_backend.service
 import mk.sorsix.com.expense_tracker_backend.api.GeminiApiResult
 import mk.sorsix.com.expense_tracker_backend.domain.Budget
 import mk.sorsix.com.expense_tracker_backend.domain.MonthlySaving
+import mk.sorsix.com.expense_tracker_backend.domain.User
 import mk.sorsix.com.expense_tracker_backend.domain.dto.PeriodSpendingSummary
 import mk.sorsix.com.expense_tracker_backend.repository.BudgetRepository
 import mk.sorsix.com.expense_tracker_backend.repository.CategoryRepository
@@ -23,6 +24,14 @@ class MonthlySavingService(
     private val monthlySavingRepository: MonthlySavingRepository,
     private val userRepository: UserRepository,
 ) {
+    fun findByUserAndMonth(userId: Long, month: LocalDate): MonthlySaving? =
+        monthlySavingRepository.findByUserIdAndSavingMonth(userId, month)
+    fun getOrCreate(user: User, month: LocalDate): MonthlySaving {
+        return monthlySavingRepository.findByUserIdAndSavingMonth(user.id, month)
+            ?: monthlySavingRepository.save(
+                MonthlySaving(user = user, savingMonth = month, totalIncome = user.monthlySalary)
+            )
+    }
 
     @Transactional
     fun generateWithAIAndPersist(userId: Long, nextPeriodBudgetLimit: BigDecimal, totalIncome: BigDecimal? = null): GeminiApiResult {
