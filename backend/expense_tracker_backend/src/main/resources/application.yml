@@ -8,7 +8,7 @@ spring:
     password: 1234
   jpa:
     hibernate:
-      ddl-auto: update
+      ddl-auto: validate
     show-sql: true
   flyway:
     locations: classpath:db/migration,classpath:db/migration/dev
@@ -18,7 +18,9 @@ spring:
         api-key: ${GEMINI_API_KEY}
         chat:
           model: gemini-3.6-flash
-
+jwt:
+#  treba da se smeni so environment variable, so ne se cuva vo git
+  secret: ${JWT_SECRET:dev-fallback-secret-at-least-32-bytes-long-for-local-testing}
 app:
   ai:
     recommendation:
