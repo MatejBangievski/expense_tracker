@@ -1,11 +1,13 @@
 package mk.sorsix.com.expense_tracker_backend.service
 
 import mk.sorsix.com.expense_tracker_backend.domain.Category
+import mk.sorsix.com.expense_tracker_backend.domain.FindMonthlySummaryResult
+import mk.sorsix.com.expense_tracker_backend.domain.GenerateMonthlySummaryResult
 import mk.sorsix.com.expense_tracker_backend.domain.MonthlySummary
 import mk.sorsix.com.expense_tracker_backend.domain.MonthlySummaryCategory
-import mk.sorsix.com.expense_tracker_backend.domain.dto.CategoryRollup
-import mk.sorsix.com.expense_tracker_backend.domain.dto.SubCategoryRollup
-import mk.sorsix.com.expense_tracker_backend.domain.dto.MonthlySummaryView
+import mk.sorsix.com.expense_tracker_backend.domain.dto.CategorySummaryResponse
+import mk.sorsix.com.expense_tracker_backend.domain.dto.MonthlySummaryResponse
+import mk.sorsix.com.expense_tracker_backend.domain.dto.SubCategorySummaryResponse
 import mk.sorsix.com.expense_tracker_backend.repository.CategoryRepository
 import mk.sorsix.com.expense_tracker_backend.repository.ExpenseRepository
 import mk.sorsix.com.expense_tracker_backend.repository.MonthlySummaryCategoryRepository
@@ -26,12 +28,12 @@ class MonthlySummaryService(
     private val monthlySummaryCategoryRepository: MonthlySummaryCategoryRepository,
 ) {
     @Transactional
-    fun generateForUser(userId: Long, month: LocalDate, totalIncomeOverride: BigDecimal? = null): MonthlySummaryView {
+    fun generateForUser(userId: Long, month: LocalDate, totalIncomeOverride: BigDecimal? = null): GenerateMonthlySummaryResult {
         val monthStart = month.withDayOfMonth(1)
         val monthEnd = monthStart.plusMonths(1).minusDays(1)
 
-        val user = userRepository.findById(userId)
-            .orElseThrow { IllegalArgumentException("No user with id=$userId") }
+        val user = userRepository.findById(userId).orElse(null)
+            ?: return GenerateMonthlySummaryResult.UserNotFound
 
         val expenses = expenseRepository.findByUserIdAndExpenseDateBetween(userId, monthStart, monthEnd)
         val subCategories = expenses.groupBy { it.category }
@@ -42,7 +44,7 @@ class MonthlySummaryService(
                     expenseCount = categoryExpenses.size,
                 )
             }
-        val totalSpent = subCategories.fold(BigDecimal.ZERO) { acc, leaf -> acc + leaf.totalAmount }
+        val totalSpent = subCategories.fold(BigDecimal.ZERO) { acc, subCategory -> acc + subCategory.totalAmount }
         val income = totalIncomeOverride ?: user.monthlySalary
 
         val existing = monthlySummaryRepository.findByUserIdAndSummaryMonth(userId, monthStart)
@@ -69,45 +71,46 @@ class MonthlySummaryService(
             }
         )
 
-        return buildView(summary, subCategories, categoriesById)
+        return GenerateMonthlySummaryResult.Success(toResponse(summary, subCategories, categoriesById))
     }
 
     @Transactional(readOnly = true)
-    fun find(userId: Long, month: LocalDate): MonthlySummaryView? {
+    fun find(userId: Long, month: LocalDate): FindMonthlySummaryResult {
         val monthStart = month.withDayOfMonth(1)
-        val summary = monthlySummaryRepository.findByUserIdAndSummaryMonth(userId, monthStart) ?: return null
+        val summary = monthlySummaryRepository.findByUserIdAndSummaryMonth(userId, monthStart)
+            ?: return FindMonthlySummaryResult.SummaryNotFound
         val categoriesById = categoryRepository.findAll().associateBy { it.id }
         val subCategories = monthlySummaryCategoryRepository.findAllWithCategoryBySummaryId(summary.id)
             .map { subCategorySpend(it.category.id, it.totalAmount, it.expenseCount) }
-        return buildView(summary, subCategories, categoriesById)
+        return FindMonthlySummaryResult.Success(toResponse(summary, subCategories, categoriesById))
     }
 
-    private fun buildView(summary: MonthlySummary, subCategories: List<subCategorySpend>, categoriesById: Map<Long, Category>, ): MonthlySummaryView {
-        val rollups = subCategories
+    private fun toResponse(summary: MonthlySummary, subCategories: List<subCategorySpend>, categoriesById: Map<Long, Category>, ): MonthlySummaryResponse {
+        val categories = subCategories
             .mapNotNull { subCategory -> categoriesById[subCategory.categoryId]?.let { it to subCategory } }
             .groupBy { (category, _) -> rootOf(category, categoriesById) }
             .map { (root, entries) ->
-                CategoryRollup(
+                CategorySummaryResponse(
                     categoryId = root.id,
                     categoryName = root.name,
                     totalAmount = entries.fold(BigDecimal.ZERO) { acc, (_, subCategory) -> acc + subCategory.totalAmount },
                     expenseCount = entries.sumOf { (_, subCategory) -> subCategory.expenseCount },
                     subcategories = entries
                         .map { (category, subCategory) ->
-                            SubCategoryRollup(category.id, category.name, subCategory.totalAmount, subCategory.expenseCount)
+                            SubCategorySummaryResponse(category.id, category.name, subCategory.totalAmount, subCategory.expenseCount)
                         }
                         .sortedByDescending { it.totalAmount },
                 )
             }
             .sortedByDescending { it.totalAmount }
 
-        return MonthlySummaryView(
+        return MonthlySummaryResponse(
             summaryId = summary.id,
             userId = summary.user.id,
             summaryMonth = summary.summaryMonth,
             totalIncome = summary.totalIncome,
             totalSpent = summary.totalSpent,
-            categories = rollups,
+            categories = categories,
         )
     }
 

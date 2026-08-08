@@ -1,4 +1,4 @@
-package mk.sorsix.com.expense_tracker_backend.api
+package mk.sorsix.com.expense_tracker_backend.domain
 
 import com.fasterxml.jackson.annotation.JsonPropertyDescription
 import java.math.BigDecimal
