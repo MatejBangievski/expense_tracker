@@ -1,4 +1,4 @@
-package mk.sorsix.com.expense_tracker_backend.controller
+package mk.sorsix.com.expense_tracker_backend.api
 
 import mk.sorsix.com.expense_tracker_backend.domain.dto.MonthlySummaryView
 import mk.sorsix.com.expense_tracker_backend.scheduling.MonthlySummaryGenerationJob
@@ -16,7 +16,6 @@ import org.springframework.web.bind.annotation.RestController
 import org.springframework.web.server.ResponseStatusException
 import java.time.Clock
 import java.time.LocalDate
-
 
 @RestController
 @RequestMapping("/api/admin/monthly-summaries")

@@ -1,5 +1,3 @@
--- Only applied when the "dev" Spring profile is active
-
 INSERT INTO app_user (display_name, email, password_hash, monthly_salary, total_saved)
 VALUES ('Dev Tester', 'dev.tester@example.com', '$2a$10$mockMockMockMockMockMockMockMockMockMockMockMockMoc', 3200.00, 500.00);
 

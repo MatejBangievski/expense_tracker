@@ -1,7 +1,5 @@
-package mk.sorsix.com.expense_tracker_backend.controller
+package mk.sorsix.com.expense_tracker_backend.api
 
-import mk.sorsix.com.expense_tracker_backend.api.GenerateMonthlySavingPlanRequest
-import mk.sorsix.com.expense_tracker_backend.api.GeminiApiResult
 import mk.sorsix.com.expense_tracker_backend.service.MonthlySavingService
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
