@@ -3,7 +3,7 @@ package mk.sorsix.com.expense_tracker_backend.service
 import mk.sorsix.com.expense_tracker_backend.api.GeminiApiResult
 import mk.sorsix.com.expense_tracker_backend.domain.Budget
 import mk.sorsix.com.expense_tracker_backend.domain.MonthlySaving
-import mk.sorsix.com.expense_tracker_backend.domain.dto.PeriodSpendingSummary
+import mk.sorsix.com.expense_tracker_backend.domain.dto.MonthlySummaryView
 import mk.sorsix.com.expense_tracker_backend.repository.BudgetRepository
 import mk.sorsix.com.expense_tracker_backend.repository.CategoryRepository
 import mk.sorsix.com.expense_tracker_backend.repository.MonthlySavingRepository
@@ -12,26 +12,27 @@ import org.springframework.ai.chat.client.ChatClient
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.math.BigDecimal
+import java.math.RoundingMode
+import java.time.Clock
 import java.time.LocalDate
 
 @Service
 class MonthlySavingService(
     private val chatClient: ChatClient,
-    private val periodSummaryService: PeriodSummaryService,
+    private val monthlySummaryService: MonthlySummaryService,
     private val categoryRepository: CategoryRepository,
     private val budgetRepository: BudgetRepository,
     private val monthlySavingRepository: MonthlySavingRepository,
     private val userRepository: UserRepository,
+    private val clock: Clock,
 ) {
-
     @Transactional
     fun generateWithAIAndPersist(userId: Long, nextPeriodBudgetLimit: BigDecimal, totalIncome: BigDecimal? = null): GeminiApiResult {
-        val periodStart: LocalDate = LocalDate.now().withDayOfMonth(1)
-        val periodEnd: LocalDate = LocalDate.now()
+        val currentMonth = LocalDate.now(clock).withDayOfMonth(1)
+        val savingMonth = currentMonth.plusMonths(1)
 
         val user = userRepository.getReferenceById(userId)
-        val savingMonth = periodStart.plusMonths(1).withDayOfMonth(1)
-        val summary = periodSummaryService.summarize(userId, periodStart, periodEnd, totalIncome)
+        val summary = monthlySummaryService.generateForUser(userId, currentMonth, totalIncome)
 
         val result = chatClient.prompt()
             .user(buildPrompt(summary, savingMonth, nextPeriodBudgetLimit))
@@ -74,13 +75,32 @@ class MonthlySavingService(
         return result
     }
 
-    private fun buildPrompt(
-        summary: PeriodSpendingSummary,
-        savingMonth: LocalDate,
-        nextPeriodBudgetLimit: BigDecimal,
-    ): String = buildString {
-        append(summary)
+    private fun buildPrompt(summary: MonthlySummaryView, savingMonth: LocalDate, nextPeriodBudgetLimit: BigDecimal, ): String = buildString {
+        appendLine("Spending summary for month: ${summary.summaryMonth}")
+        summary.totalIncome?.let { appendLine("Reported monthly income: ${it.money()}") }
+        appendLine("Total spent this month: ${summary.totalSpent.money()}")
+        appendLine()
+
+        if (summary.categories.isEmpty()) {
+            appendLine("No spending was recorded for this month.")
+        } else {
+            appendLine("Spending by category (top-level category, then its subcategories):")
+            summary.categories.forEach { category ->
+                appendLine("- ${category.categoryName}: ${category.totalAmount.money()} across ${category.expenseCount} expense(s)")
+                category.subcategories.forEach { sub ->
+                    val label = if (sub.categoryId == category.categoryId) {
+                        "${sub.categoryName} (spent directly on this category)"
+                    } else {
+                        sub.categoryName
+                    }
+                    appendLine("    - $label: ${sub.totalAmount.money()} across ${sub.expenseCount} expense(s)")
+                }
+            }
+        }
+
         appendLine()
         appendLine("Total budget limit to distribute across categories for $savingMonth: $nextPeriodBudgetLimit")
     }
+
+    private fun BigDecimal.money(): String = setScale(2, RoundingMode.HALF_UP).toPlainString()
 }

@@ -4,3 +4,8 @@ spring:
       on-profile: dev
   flyway:
     locations: classpath:db/migration,classpath:db/migration/dev
+
+app:
+  scheduling:
+    monthly-summary:
+      cron: "0 */10 * * * *"
