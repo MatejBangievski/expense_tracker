@@ -1,5 +1,3 @@
--- Only applied when the "dev" Spring profile is active
-
 INSERT INTO app_user (display_name, email, password_hash, monthly_salary, total_saved)
 VALUES ('Dev Tester', 'dev.tester@example.com', '$2a$10$mockMockMockMockMockMockMockMockMockMockMockMockMoc', 3200.00, 500.00);
 
@@ -21,17 +19,17 @@ INSERT INTO expense (user_id, category_id, description, amount, expense_date)
 SELECT u.id, c.id, x.description, x.amount, x.expense_date
 FROM app_user u
 CROSS JOIN (VALUES
-    ('Groceries',               'Weekly grocery run',    62.40, DATE '2026-08-01'),
-    ('Groceries',               'Weekly grocery run',    58.15, DATE '2026-08-04'),
-    ('Dining Out',               'Lunch with coworkers',  18.50, DATE '2026-08-02'),
-    ('Dining Out',               'Pizza night',           23.50, DATE '2026-08-05'),
-    ('Fuel',                     'Gas station fill-up',   45.00, DATE '2026-08-03'),
-    ('Public Transit',           'Monthly bus pass',      40.00, DATE '2026-08-01'),
-    ('Streaming Subscriptions',  'Netflix',                15.99, DATE '2026-08-01'),
-    ('Streaming Subscriptions',  'Disney+',                11.99, DATE '2026-08-01'),
-    ('Video Games',              'New release',            29.99, DATE '2026-08-05'),
-    ('Electricity',              'August electricity bill', 65.00, DATE '2026-08-02'),
-    ('Internet',                 'August internet bill',   35.00, DATE '2026-08-02')
+    ('Groceries',               'Weekly grocery run',    62.40, DATE '2026-07-01'),
+    ('Groceries',               'Weekly grocery run',    58.15, DATE '2026-07-04'),
+    ('Dining Out',               'Lunch with coworkers',  18.50, DATE '2026-07-02'),
+    ('Dining Out',               'Pizza night',           23.50, DATE '2026-07-05'),
+    ('Fuel',                     'Gas station fill-up',   45.00, DATE '2026-07-03'),
+    ('Public Transit',           'Monthly bus pass',      40.00, DATE '2026-07-01'),
+    ('Streaming Subscriptions',  'Netflix',                15.99, DATE '2026-07-01'),
+    ('Streaming Subscriptions',  'Disney+',                11.99, DATE '2026-07-01'),
+    ('Video Games',              'New release',            29.99, DATE '2026-07-05'),
+    ('Electricity',              'August electricity bill', 65.00, DATE '2026-07-02'),
+    ('Internet',                 'August internet bill',   35.00, DATE '2026-07-02')
 ) AS x(category_name, description, amount, expense_date)
 JOIN category c ON c.name = x.category_name
 WHERE u.email = 'dev.tester@example.com';
