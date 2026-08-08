@@ -1,4 +1,4 @@
-package mk.sorsix.com.expense_tracker_backend.api
+package mk.sorsix.com.expense_tracker_backend.domain
 
 import com.fasterxml.jackson.annotation.JsonPropertyDescription
 import java.math.BigDecimal
@@ -15,7 +15,8 @@ data class GeminiApiResult(
     @get:JsonPropertyDescription(
         "A short (3-5 sentence), warm, non-judgemental message from a friendly financial " +
                 "consultant. If success is true: concrete advice referencing real category/" +
-                "subcategory names and amounts from the input (e.g. which subscriptions to cut). " +
+                "subcategory names, amounts and expense counts from the input. Never name a " +
+                "specific merchant, brand or product - that information is not provided. " +
                 "If success is false: a clear, plain-language explanation of why no advice could " +
                 "be produced. Never invent numbers that weren't in the input."
     )
