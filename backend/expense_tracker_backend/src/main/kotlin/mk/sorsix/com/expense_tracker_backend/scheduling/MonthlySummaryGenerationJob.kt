@@ -1,5 +1,7 @@
 package mk.sorsix.com.expense_tracker_backend.scheduling
 
+import mk.sorsix.com.expense_tracker_backend.domain.GenerateMonthlySummaryResult
+import mk.sorsix.com.expense_tracker_backend.domain.dto.MonthlySummaryRunReport
 import mk.sorsix.com.expense_tracker_backend.repository.UserRepository
 import mk.sorsix.com.expense_tracker_backend.service.MonthlySummaryService
 import org.slf4j.LoggerFactory
@@ -39,8 +41,13 @@ class MonthlySummaryGenerationJob(
 
         for (userId in userIds) {
             try {
-                monthlySummaryService.generateForUser(userId, monthStart)
-                succeeded++
+                when (monthlySummaryService.generateForUser(userId, monthStart)) {
+                    is GenerateMonthlySummaryResult.Success -> succeeded++
+                    is GenerateMonthlySummaryResult.UserNotFound -> {
+                        failedUserIds += userId
+                        log.warn("Monthly summary skipped, user no longer exists: userId={} month={}", userId, monthStart)
+                    }
+                }
             } catch (ex: Exception) {
                 failedUserIds += userId
                 log.error("Monthly summary generation failed for userId={} month={}", userId, monthStart, ex)
