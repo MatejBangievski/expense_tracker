@@ -5,4 +5,5 @@ import org.springframework.data.jpa.repository.JpaRepository
 
 interface CategoryRepository : JpaRepository<Category, Long> {
     fun findByNameIgnoreCase(name: String): Category?
+    fun findByUserIsNullOrUserId(userId: Long): List<Category>
 }

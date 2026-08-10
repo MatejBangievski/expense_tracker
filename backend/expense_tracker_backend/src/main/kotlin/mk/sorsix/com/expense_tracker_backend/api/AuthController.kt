@@ -18,7 +18,7 @@ import org.springframework.web.bind.annotation.RestController
 
 @RestController
 @RequestMapping("/api/auth")
-class AuthController (private val authService: AuthService) {
+class AuthController(private val authService : AuthService) {
 
     @PostMapping("/register")
     fun register(@RequestBody request : RegisterRequest): ResponseEntity<*> =
@@ -30,7 +30,7 @@ class AuthController (private val authService: AuthService) {
                 )
             )
             is RegisterResult.EmailAlreadyInUse  -> ResponseEntity.status(HttpStatus.CONFLICT)
-                .body(mapOf("error" to "Email already in use."))
+                .body(mapOf("error" to "Email already in use"))
         }
     @PostMapping("/login")
     fun login(@RequestBody request : LoginRequest): ResponseEntity<*> =
@@ -42,7 +42,7 @@ class AuthController (private val authService: AuthService) {
                 )
             )
             is LoginResult.InvalidCredentials -> ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                .body(mapOf("error" to "Invalid credentials."))
+                .body(mapOf("error" to "Invalid credentials"))
         }
     @PostMapping("/refresh")
     fun refresh(@RequestBody request: RefreshRequest): ResponseEntity<*> =

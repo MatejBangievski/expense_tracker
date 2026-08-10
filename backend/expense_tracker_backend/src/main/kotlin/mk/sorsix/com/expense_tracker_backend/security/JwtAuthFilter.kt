@@ -10,8 +10,9 @@ import org.springframework.stereotype.Component
 import org.springframework.web.filter.OncePerRequestFilter
 
 @Component
-class JwtAuthFilter  (private val jwtService: JwtService,
-private val userDetailsService: CustomUserDetailsService
+class JwtAuthFilter(
+    private val jwtService: JwtService,
+    private val userDetailsService: CustomUserDetailsService
 ) : OncePerRequestFilter() {
     override fun doFilterInternal(
         request: HttpServletRequest,
@@ -34,6 +35,7 @@ private val userDetailsService: CustomUserDetailsService
                 authToken.details = WebAuthenticationDetailsSource().buildDetails(request)
                 SecurityContextHolder.getContext().authentication = authToken
             }
+
             is TokenValidationResult.Invalid -> {
 
             }

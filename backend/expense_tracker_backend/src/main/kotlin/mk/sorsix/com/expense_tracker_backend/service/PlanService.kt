@@ -15,11 +15,14 @@ import org.springframework.stereotype.Service
 import java.math.BigDecimal
 
 @Service
-class PlanService (private val planItemRepository: PlanItemRepository,
-                   private val planRepository: PlanRepository) {
-fun findPlanById(id: Long): Plan? {
+class PlanService(
+    private val planItemRepository: PlanItemRepository,
+    private val planRepository: PlanRepository
+) {
+    fun findPlanById(id: Long): Plan? {
         return planRepository.findByIdOrNull(id)
     }
+
     fun listPlans(user: User): List<PlanResponse> =
         planRepository.findByUserId(user.id).map { it.toResponse() }
 
