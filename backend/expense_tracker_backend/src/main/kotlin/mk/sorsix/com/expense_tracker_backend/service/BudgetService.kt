@@ -16,38 +16,50 @@ import org.springframework.stereotype.Service
 import java.time.LocalDate
 
 @Service
-class BudgetService (private val budgetRepository: BudgetRepository,
-                     private val categoryService: CategoryService,
-                     private val monthlySavingService: MonthlySavingService,
-                     private val expenseRepository: ExpenseRepository
-){
-    fun listBudgetsByMonth(user: User,month: LocalDate): List<BudgetResponse> {
+class BudgetService(
+    private val budgetRepository: BudgetRepository,
+    private val categoryService: CategoryService,
+    private val monthlySavingService: MonthlySavingService,
+    private val expenseRepository: ExpenseRepository
+) {
+    fun listBudgetsByMonth(user: User, month: LocalDate): List<BudgetResponse> {
         val monthlySaving = monthlySavingService.findByUserAndMonth(user.id, month)
             ?: return emptyList()
         val budgets = budgetRepository.findByMonthlySavingId(monthlySaving.id)
         val refreshed = budgets.map { refreshActualSpent(it, month) }
         return refreshed.map { it.toResponse(month) }
     }
-    fun createBudget(user: User,request: CreateBudgetRequest): CreateBudgetResult {
-        val category = categoryService.findCategoryById(request.categoryId)
+
+    fun createBudget(user: User, request: CreateBudgetRequest): CreateBudgetResult {
+        val foundCategory = categoryService.findCategoryById(request.categoryId)
             ?: return CreateBudgetResult.CategoryNotFound
+
+        val categoryOwner = foundCategory.user
+        if (categoryOwner != null && categoryOwner.id != user.id) {
+            return CreateBudgetResult.CategoryNotFound
+        }
+
         val monthlySaving = monthlySavingService.getOrCreate(user, request.budgetMonth)
-        val existing = budgetRepository.findByMonthlySavingIdAndCategoryId(monthlySaving.id, category.id)
+
+        val existing = budgetRepository.findByMonthlySavingIdAndCategoryId(monthlySaving.id, request.categoryId)
         if (existing != null) {
             return CreateBudgetResult.AlreadyExists
         }
-        val budget = budgetRepository.save(
+
+        val saved = budgetRepository.save(
             Budget(
                 user = user,
-                category = category,
+                category = foundCategory,
                 monthlySaving = monthlySaving,
                 monthlyLimit = request.monthlyLimit,
                 reason = request.reason
             )
         )
-        return CreateBudgetResult.Success(budget.toResponse(request.budgetMonth))
+
+        return CreateBudgetResult.Success(saved.toResponse(request.budgetMonth))
     }
-    fun update(user: User, budgetId: Long, request: UpdateBudgetRequest): UpdateBudgetResult {
+
+    fun updateBudget(user: User, budgetId: Long, request: UpdateBudgetRequest): UpdateBudgetResult {
         val existing = budgetRepository.findById(budgetId).orElse(null)
             ?: return UpdateBudgetResult.BudgetNotFound
 
@@ -61,7 +73,8 @@ class BudgetService (private val budgetRepository: BudgetRepository,
 
         return UpdateBudgetResult.Success(updated.toResponse(existing.monthlySaving.savingMonth))
     }
-    fun delete(user: User, budgetId: Long): DeleteBudgetResult {
+
+    fun deleteBudget(user: User, budgetId: Long): DeleteBudgetResult {
         val existing = budgetRepository.findById(budgetId).orElse(null)
             ?: return DeleteBudgetResult.BudgetNotFound
 
@@ -72,6 +85,7 @@ class BudgetService (private val budgetRepository: BudgetRepository,
         budgetRepository.delete(existing)
         return DeleteBudgetResult.Success
     }
+
     private fun refreshActualSpent(budget: Budget, month: LocalDate): Budget {
         val start = month.withDayOfMonth(1)
         val end = month.withDayOfMonth(month.lengthOfMonth())

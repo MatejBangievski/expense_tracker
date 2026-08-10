@@ -43,6 +43,7 @@ class MonthlySavingService(
                 MonthlySaving(user = user, savingMonth = month, totalIncome = user.monthlySalary)
             )
 
+
     @Transactional
     fun generateWithAIAndPersist(userId: Long, nextPeriodBudgetLimit: BigDecimal, totalIncome: BigDecimal? = null): GenerateMonthlySavingPlanResult {
         val currentMonth = LocalDate.now(clock).withDayOfMonth(1)

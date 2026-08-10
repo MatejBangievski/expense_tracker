@@ -16,11 +16,14 @@ import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 
 @Service
-class ExpenseService(private val expenseRepository: ExpenseRepository,private val categoryService: CategoryService) {
+class ExpenseService(
+    private val expenseRepository: ExpenseRepository,
+    private val categoryService: CategoryService
+) {
 
     fun findExpenseById(expenseId: Long): Expense? = expenseRepository.findByIdOrNull(expenseId)
 
-    fun listExpenses(user: User,filter: ExpenseFilter) : List<ExpenseResponse> {
+    fun listExpenses(user: User, filter: ExpenseFilter): List<ExpenseResponse> {
         var specification = ExpenseSpecifications.belongsToUser(user.id)
         ExpenseSpecifications.categoryNameEquals(filter.categoryName)?.let { specification = specification.and(it) }
         ExpenseSpecifications.betweenDates(filter.periodStart, filter.periodEnd)
@@ -30,36 +33,48 @@ class ExpenseService(private val expenseRepository: ExpenseRepository,private va
             it.toResponse()
         }
     }
-    fun createExpense(user: User, request: CreateExpenseRequest): CreateExpenseResult {
-        val category = categoryService.findCategoryById(request.categoryId)
 
-        category?.let {
-            val expense = Expense(
+    fun createExpense(user: User, request: CreateExpenseRequest): CreateExpenseResult {
+        val foundCategory = categoryService.findCategoryById(request.categoryId)
+            ?: return CreateExpenseResult.CategoryNotFound
+
+        val categoryOwner = foundCategory.user
+        if (categoryOwner != null && categoryOwner.id != user.id) {
+            return CreateExpenseResult.CategoryNotFound
+        }
+
+        val saved = expenseRepository.save(
+            Expense(
                 user = user,
-                category = it,
+                category = foundCategory,
                 amount = request.amount,
                 expenseDate = request.expenseDate,
                 description = request.description
             )
-            return expenseRepository.save(expense).let { CreateExpenseResult.Success(it.toResponse()) }
-        } ?: run {
-            return CreateExpenseResult.CategoryNotFound
-        }
+        )
+
+        return CreateExpenseResult.Success(saved.toResponse())
     }
-    fun update(user: User, expenseId: Long, request: UpdateExpenseRequest): UpdateExpenseResult {
-        val existing = findExpenseById(expenseId)
+
+    fun updateExpense(user: User, expenseId: Long, request: UpdateExpenseRequest): UpdateExpenseResult {
+        val existing = expenseRepository.findById(expenseId).orElse(null)
             ?: return UpdateExpenseResult.ExpenseNotFound
 
         if (existing.user.id != user.id) {
             return UpdateExpenseResult.NotOwner
         }
 
-        val category = categoryService.findCategoryById(request.categoryId)
+        val foundCategory = categoryService.findCategoryById(request.categoryId)
             ?: return UpdateExpenseResult.CategoryNotFound
+
+        val categoryOwner = foundCategory.user
+        if (categoryOwner != null && categoryOwner.id != user.id) {
+            return UpdateExpenseResult.CategoryNotFound
+        }
 
         val updated = expenseRepository.save(
             existing.copy(
-                category = category,
+                category = foundCategory,
                 amount = request.amount,
                 expenseDate = request.expenseDate,
                 description = request.description
@@ -68,7 +83,8 @@ class ExpenseService(private val expenseRepository: ExpenseRepository,private va
 
         return UpdateExpenseResult.Success(updated.toResponse())
     }
-    fun delete(user: User, expenseId: Long): DeleteExpenseResult {
+
+    fun deleteExpense(user: User, expenseId: Long): DeleteExpenseResult {
         val existing = findExpenseById(expenseId)
             ?: return DeleteExpenseResult.ExpenseNotFound
 

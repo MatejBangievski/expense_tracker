@@ -13,15 +13,15 @@ import javax.crypto.SecretKey
 
 
 @Service
-class JwtService (@Value("\${jwt.secret}") private val secretString: String){
-    private val secretKey : SecretKey = Keys.hmacShaKeyFor( secretString.toByteArray())
+class JwtService(@Value("\${jwt.secret}") private val secretString: String) {
+    private val secretKey: SecretKey = Keys.hmacShaKeyFor(secretString.toByteArray())
 
     private val accessTokenExpirationMillis = 1000 * 60 * 15
     private val refreshExpirationMillis = 1000L * 60 * 60 * 24 * 7
 
-    fun generateAccessToken(email: String): String{
+    fun generateAccessToken(email: String): String {
         val now = Date()
-        val expiry= Date(now.time + accessTokenExpirationMillis)
+        val expiry = Date(now.time + accessTokenExpirationMillis)
         return Jwts.builder()
             .subject(email)
             .issuedAt(now)
@@ -29,12 +29,13 @@ class JwtService (@Value("\${jwt.secret}") private val secretString: String){
             .signWith(secretKey)
             .compact()
     }
+
     fun generateRefreshToken(): String = UUID.randomUUID().toString()
     fun refreshTokenExpiryInstant(): Instant = Instant.now().plusMillis(refreshExpirationMillis)
 
 
-    fun validateAccessToken(refreshToken: String) : TokenValidationResult{
-        val email = try{
+    fun validateAccessToken(refreshToken: String): TokenValidationResult {
+        val email = try {
             Jwts.parser().verifyWith(secretKey).build().parseSignedClaims(refreshToken).payload.subject
 
         } catch (e: Exception) {
