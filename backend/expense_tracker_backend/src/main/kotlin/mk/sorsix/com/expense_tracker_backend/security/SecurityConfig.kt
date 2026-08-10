@@ -1,5 +1,6 @@
 package mk.sorsix.com.expense_tracker_backend.security
 
+import jakarta.servlet.http.HttpServletResponse
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.security.config.annotation.web.builders.HttpSecurity
@@ -28,7 +29,14 @@ class SecurityConfig(
                     .requestMatchers("/api/expenses/**").authenticated()
                     .requestMatchers("/api/budgets/**").authenticated()
                     .requestMatchers("/api/plans/**").authenticated()
+                    .requestMatchers("/api/categories/**").authenticated()
+                    .requestMatchers("/api/users/**").authenticated()
                     .anyRequest().permitAll()
+            }
+            .exceptionHandling {
+                it.authenticationEntryPoint { _, response, _ ->
+                    response.sendError(HttpServletResponse.SC_UNAUTHORIZED)
+                }
             }
             .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter::class.java)
 

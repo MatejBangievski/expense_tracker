@@ -25,9 +25,10 @@ import java.time.LocalDate
 
 @RestController
 @RequestMapping("api/budgets")
-class BudgetController (private val budgetService: BudgetService,
-                        private val currentUserProvider: CurrentUserProvider
-){
+class BudgetController(
+    private val budgetService: BudgetService,
+    private val currentUserProvider: CurrentUserProvider
+) {
     @GetMapping
     fun list(
         @AuthenticationPrincipal userDetails: UserDetails,
@@ -44,6 +45,7 @@ class BudgetController (private val budgetService: BudgetService,
             is CreateBudgetResult.Success -> ResponseEntity.ok(result.budget)
             is CreateBudgetResult.CategoryNotFound -> ResponseEntity.status(HttpStatus.BAD_REQUEST)
                 .body(mapOf("error" to "Category not found"))
+
             is CreateBudgetResult.AlreadyExists -> ResponseEntity.status(HttpStatus.CONFLICT)
                 .body(mapOf("error" to "A budget already exists for this category and month"))
         }
@@ -54,10 +56,11 @@ class BudgetController (private val budgetService: BudgetService,
         @PathVariable id: Long,
         @RequestBody request: UpdateBudgetRequest
     ): ResponseEntity<*> =
-        when (val result = budgetService.update(currentUserProvider.resolve(userDetails), id, request)) {
+        when (val result = budgetService.updateBudget(currentUserProvider.resolve(userDetails), id, request)) {
             is UpdateBudgetResult.Success -> ResponseEntity.ok(result.budget)
             is UpdateBudgetResult.BudgetNotFound -> ResponseEntity.status(HttpStatus.NOT_FOUND)
                 .body(mapOf("error" to "Budget not found"))
+
             is UpdateBudgetResult.NotOwner -> ResponseEntity.status(HttpStatus.FORBIDDEN)
                 .body(mapOf("error" to "You do not own this budget"))
         }
@@ -67,10 +70,11 @@ class BudgetController (private val budgetService: BudgetService,
         @AuthenticationPrincipal userDetails: UserDetails,
         @PathVariable id: Long
     ): ResponseEntity<*> =
-        when (val result = budgetService.delete(currentUserProvider.resolve(userDetails), id)) {
+        when (val result = budgetService.deleteBudget(currentUserProvider.resolve(userDetails), id)) {
             is DeleteBudgetResult.Success -> ResponseEntity.noContent().build<Unit>()
             is DeleteBudgetResult.BudgetNotFound -> ResponseEntity.status(HttpStatus.NOT_FOUND)
                 .body(mapOf("error" to "Budget not found"))
+
             is DeleteBudgetResult.NotOwner -> ResponseEntity.status(HttpStatus.FORBIDDEN)
                 .body(mapOf("error" to "You do not own this budget"))
         }

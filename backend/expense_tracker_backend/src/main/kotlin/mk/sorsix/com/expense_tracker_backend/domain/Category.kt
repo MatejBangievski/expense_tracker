@@ -17,5 +17,9 @@ data class Category(
 
     @ManyToOne
     @JoinColumn(name = "parent_category_id")
-    val parentCategory: Category? = null
+    val parentCategory: Category? = null,
+
+    @ManyToOne
+    @JoinColumn(name = "user_id")
+    val user: User? = null
 )

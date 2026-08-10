@@ -22,31 +22,40 @@ import org.springframework.web.bind.annotation.RestController
 
 @RestController
 @RequestMapping("/api/plans/{planId}/items")
-class PlanItemController (private val planItemService: PlanItemService,
-                          private val currentUserProvider: CurrentUserProvider
-){
+class PlanItemController(
+    private val planItemService: PlanItemService,
+    private val currentUserProvider: CurrentUserProvider
+) {
     @GetMapping
-    fun listPlanItems(@PathVariable planId: Long,
-                      @AuthenticationPrincipal userDetails: UserDetails): ResponseEntity<*> {
+    fun listPlanItems(
+        @PathVariable planId: Long,
+        @AuthenticationPrincipal userDetails: UserDetails
+    ): ResponseEntity<*> {
         val items = planItemService.listPlanItems(currentUserProvider.resolve(userDetails), planId)
             ?: return ResponseEntity.status(HttpStatus.NOT_FOUND).body(mapOf("error" to "Plan not found"))
         return ResponseEntity.ok(items)
     }
+
     @PostMapping
-    fun createPlanItem(@AuthenticationPrincipal userDetails: UserDetails,
-                       @PathVariable planId: Long,
-                       @RequestBody request: CreatePlanItemRequest
+    fun createPlanItem(
+        @AuthenticationPrincipal userDetails: UserDetails,
+        @PathVariable planId: Long,
+        @RequestBody request: CreatePlanItemRequest
     ): ResponseEntity<*> =
         when (val result = planItemService.createPlanItem(currentUserProvider.resolve(userDetails), planId, request)) {
             is CreatePlanItemResult.Success ->
                 ResponseEntity.ok(result.item)
+
             is CreatePlanItemResult.PlanNotFound ->
                 ResponseEntity.status(HttpStatus.NOT_FOUND).body(mapOf("error" to "Plan not found"))
+
             is CreatePlanItemResult.NotOwner ->
-                ResponseEntity.status(HttpStatus.FORBIDDEN).body(mapOf("error" to "Not the owner of the plan"))
+                ResponseEntity.status(HttpStatus.FORBIDDEN).body(mapOf("error" to "You do not own this plan"))
+
             is CreatePlanItemResult.CategoryNotFound ->
                 ResponseEntity.status(HttpStatus.BAD_REQUEST).body(mapOf("error" to "Category not found"))
         }
+
     @PutMapping("/{itemId}")
     fun update(
         @AuthenticationPrincipal userDetails: UserDetails,
@@ -58,8 +67,10 @@ class PlanItemController (private val planItemService: PlanItemService,
             is UpdatePlanItemResult.Success -> ResponseEntity.ok(result.item)
             is UpdatePlanItemResult.ItemNotFound -> ResponseEntity.status(HttpStatus.NOT_FOUND)
                 .body(mapOf("error" to "Plan item not found"))
+
             is UpdatePlanItemResult.NotOwner -> ResponseEntity.status(HttpStatus.FORBIDDEN)
                 .body(mapOf("error" to "You do not own this plan"))
+
             is UpdatePlanItemResult.CategoryNotFound -> ResponseEntity.status(HttpStatus.BAD_REQUEST)
                 .body(mapOf("error" to "Category not found"))
         }
@@ -74,6 +85,7 @@ class PlanItemController (private val planItemService: PlanItemService,
             is DeletePlanItemResult.Success -> ResponseEntity.noContent().build<Unit>()
             is DeletePlanItemResult.ItemNotFound -> ResponseEntity.status(HttpStatus.NOT_FOUND)
                 .body(mapOf("error" to "Plan item not found"))
+
             is DeletePlanItemResult.NotOwner -> ResponseEntity.status(HttpStatus.FORBIDDEN)
                 .body(mapOf("error" to "You do not own this plan"))
         }

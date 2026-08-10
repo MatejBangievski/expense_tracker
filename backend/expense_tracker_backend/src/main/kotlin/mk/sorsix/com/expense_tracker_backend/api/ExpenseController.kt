@@ -27,23 +27,28 @@ import java.time.LocalDate
 
 @RestController
 @RequestMapping("api/expenses")
-class ExpenseController(private val expenseService: ExpenseService,
-                        private val currentUserProvider: CurrentUserProvider)
-{
+class ExpenseController(
+    private val expenseService: ExpenseService,
+    private val currentUserProvider: CurrentUserProvider
+) {
 
     @GetMapping
-    fun getExpenses(@AuthenticationPrincipal userDetails: UserDetails,
-                    @RequestParam(required = false) categoryName: String?,
-                    @RequestParam(required = false) periodStart: LocalDate?,
-                    @RequestParam(required = false) periodEnd: LocalDate?,
-                    @RequestParam(required = false) search: String?): List<ExpenseResponse>{
+    fun getExpenses(
+        @AuthenticationPrincipal userDetails: UserDetails,
+        @RequestParam(required = false) categoryName: String?,
+        @RequestParam(required = false) periodStart: LocalDate?,
+        @RequestParam(required = false) periodEnd: LocalDate?,
+        @RequestParam(required = false) search: String?
+    ): List<ExpenseResponse> {
         val filter = ExpenseFilter(categoryName, periodStart, periodEnd, search)
         return expenseService.listExpenses(currentUserProvider.resolve(userDetails), filter)
     }
+
     @PostMapping
-    fun createExpense(@AuthenticationPrincipal userDetails: UserDetails,
-                      @RequestBody request: CreateExpenseRequest
-    ) : ResponseEntity<*> =
+    fun createExpense(
+        @AuthenticationPrincipal userDetails: UserDetails,
+        @RequestBody request: CreateExpenseRequest
+    ): ResponseEntity<*> =
         when (val result = expenseService.createExpense(currentUserProvider.resolve(userDetails), request)) {
             is CreateExpenseResult.Success -> ResponseEntity.ok(result.expense)
             is CreateExpenseResult.CategoryNotFound -> ResponseEntity.status(HttpStatus.BAD_REQUEST)
@@ -51,28 +56,33 @@ class ExpenseController(private val expenseService: ExpenseService,
         }
 
     @PutMapping("/{id}")
-    fun updateExpense(@AuthenticationPrincipal userDetails: UserDetails,
-                      @PathVariable id: Long,
-                      @RequestBody request: UpdateExpenseRequest
-    ) : ResponseEntity<*> =
-        when (val result = expenseService.update(currentUserProvider.resolve(userDetails), id, request)) {
+    fun updateExpense(
+        @AuthenticationPrincipal userDetails: UserDetails,
+        @PathVariable id: Long,
+        @RequestBody request: UpdateExpenseRequest
+    ): ResponseEntity<*> =
+        when (val result = expenseService.updateExpense(currentUserProvider.resolve(userDetails), id, request)) {
             is UpdateExpenseResult.Success -> ResponseEntity.ok(result.expense)
             is UpdateExpenseResult.ExpenseNotFound -> ResponseEntity.status(HttpStatus.NOT_FOUND)
                 .body(mapOf("error" to "Expense not found"))
+
             is UpdateExpenseResult.CategoryNotFound -> ResponseEntity.status(HttpStatus.BAD_REQUEST)
                 .body(mapOf("error" to "Category not found"))
+
             is UpdateExpenseResult.NotOwner -> ResponseEntity.status(HttpStatus.FORBIDDEN)
                 .body(mapOf("error" to "You do not own this expense"))
         }
+
     @DeleteMapping("/{id}")
     fun delete(
         @AuthenticationPrincipal userDetails: UserDetails,
         @PathVariable id: Long
     ): ResponseEntity<*> =
-        when (val result = expenseService.delete(currentUserProvider.resolve(userDetails), id)) {
+        when (val result = expenseService.deleteExpense(currentUserProvider.resolve(userDetails), id)) {
             is DeleteExpenseResult.Success -> ResponseEntity.noContent().build<Unit>()
             is DeleteExpenseResult.ExpenseNotFound -> ResponseEntity.status(HttpStatus.NOT_FOUND)
                 .body(mapOf("error" to "Expense not found"))
+
             is DeleteExpenseResult.NotOwner -> ResponseEntity.status(HttpStatus.FORBIDDEN)
                 .body(mapOf("error" to "You do not own this expense"))
         }

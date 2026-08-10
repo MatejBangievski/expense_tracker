@@ -9,6 +9,7 @@ import java.math.BigDecimal
 import java.time.LocalDate
 
 interface ExpenseRepository : JpaRepository<Expense, Long>, JpaSpecificationExecutor<Expense> {
+    fun existsByCategoryId(categoryId: Long): Boolean
     fun findByUserIdAndExpenseDateBetween(userId: Long, periodStart: LocalDate, periodEnd: LocalDate): List<Expense>
     @Query("""
         SELECT COALESCE(SUM(e.amount), 0) FROM Expense e
@@ -19,5 +20,14 @@ interface ExpenseRepository : JpaRepository<Expense, Long>, JpaSpecificationExec
         @Param("categoryId") categoryId: Long,
         @Param("start") start: LocalDate,
         @Param("end") end: LocalDate
+    ): BigDecimal
+
+    @Query("""
+    SELECT COALESCE(SUM(e.amount), 0) FROM Expense e
+    WHERE e.plan.id = :planId AND e.expenseDate = :date
+""")
+    fun sumAmountByPlanAndDate(
+        @Param("planId") planId: Long,
+        @Param("date") date: LocalDate
     ): BigDecimal
 }
