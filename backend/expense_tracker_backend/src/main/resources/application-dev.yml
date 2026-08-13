@@ -7,5 +7,9 @@ spring:
 
 app:
   scheduling:
-    monthly-summary:
+    week-summary:
+      cron: "0 */5 * * * *"
+    month-summary:
       cron: "0 */10 * * * *"
+    year-summary:
+      cron: "0 */30 * * * *"

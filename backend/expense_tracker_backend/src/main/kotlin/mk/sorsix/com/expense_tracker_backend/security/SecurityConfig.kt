@@ -31,6 +31,8 @@ class SecurityConfig(
                     .requestMatchers("/api/plans/**").authenticated()
                     .requestMatchers("/api/categories/**").authenticated()
                     .requestMatchers("/api/users/**").authenticated()
+                    .requestMatchers("/api/monthly-saving-plan/**").authenticated()
+                    .requestMatchers("/api/period-comparisons/**").authenticated()
                     .anyRequest().permitAll()
             }
             .exceptionHandling {

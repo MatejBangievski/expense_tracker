@@ -2,31 +2,35 @@ package mk.sorsix.com.expense_tracker_backend.api
 
 import mk.sorsix.com.expense_tracker_backend.domain.GenerateMonthlySavingPlanResult
 import mk.sorsix.com.expense_tracker_backend.domain.dto.GenerateMonthlySavingPlanRequest
+import mk.sorsix.com.expense_tracker_backend.security.CurrentUserProvider
 import mk.sorsix.com.expense_tracker_backend.service.MonthlySavingService
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
-import org.springframework.web.bind.annotation.PathVariable
+import org.springframework.security.core.annotation.AuthenticationPrincipal
+import org.springframework.security.core.userdetails.UserDetails
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
 
 @RestController
-@RequestMapping("api/users/{userId}/monthly-saving-plan")
+@RequestMapping("api/monthly-saving-plan")
 class MonthlySavingController(
     private val monthlySavingService: MonthlySavingService,
+    private val currentUserProvider: CurrentUserProvider,
 ) {
 
     @PostMapping
-    fun generate(@PathVariable userId: Long, @RequestBody request: GenerateMonthlySavingPlanRequest): ResponseEntity<*> =
+    fun generate(
+        @AuthenticationPrincipal userDetails: UserDetails,
+        @RequestBody request: GenerateMonthlySavingPlanRequest,
+    ): ResponseEntity<*> =
         when (val result = monthlySavingService.generateWithAIAndPersist(
-            userId = userId,
+            user = currentUserProvider.resolve(userDetails),
             nextPeriodBudgetLimit = request.budgetLimit,
             totalIncome = request.totalIncome,
         )) {
             is GenerateMonthlySavingPlanResult.Success -> ResponseEntity.ok(result.savingPlan)
-            is GenerateMonthlySavingPlanResult.UserNotFound -> ResponseEntity.status(HttpStatus.NOT_FOUND)
-                .body(mapOf("error" to "User not found"))
             is GenerateMonthlySavingPlanResult.InsufficientData -> ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY)
                 .body(mapOf("error" to result.message))
             is GenerateMonthlySavingPlanResult.AiUnavailable -> ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)

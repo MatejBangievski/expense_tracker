@@ -6,7 +6,7 @@ import java.time.LocalDate
 
 
 @Entity
-data class MonthlySummary(
+data class PeriodSummary(
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     val id: Long = 0,
 
@@ -14,8 +14,12 @@ data class MonthlySummary(
     @JoinColumn(name = "user_id", nullable = false)
     val user: User = User(),
 
-    @Column(name = "summary_month", nullable = false)
-    val summaryMonth: LocalDate = LocalDate.now().withDayOfMonth(1),
+    @Enumerated(EnumType.STRING)
+    @Column(name = "period_type", nullable = false, length = 10)
+    val periodType: PeriodType = PeriodType.MONTH,
+
+    @Column(name = "period_start", nullable = false)
+    val periodStart: LocalDate = LocalDate.now().withDayOfMonth(1),
 
     @Column(name = "total_spent", nullable = false, precision = 12, scale = 2)
     val totalSpent: BigDecimal = BigDecimal.ZERO,

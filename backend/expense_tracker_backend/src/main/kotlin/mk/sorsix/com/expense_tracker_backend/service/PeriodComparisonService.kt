@@ -1,0 +1,143 @@
+package mk.sorsix.com.expense_tracker_backend.service
+
+import mk.sorsix.com.expense_tracker_backend.config.AiPrompts
+import mk.sorsix.com.expense_tracker_backend.domain.GeminiComparisonResult
+import mk.sorsix.com.expense_tracker_backend.domain.GeneratePeriodComparisonResult
+import mk.sorsix.com.expense_tracker_backend.domain.GeneratePeriodSummaryResult
+import mk.sorsix.com.expense_tracker_backend.domain.PeriodComparison
+import mk.sorsix.com.expense_tracker_backend.domain.PeriodType
+import mk.sorsix.com.expense_tracker_backend.domain.User
+import mk.sorsix.com.expense_tracker_backend.domain.dto.PeriodComparisonResponse
+import mk.sorsix.com.expense_tracker_backend.domain.dto.PeriodSummaryResponse
+import mk.sorsix.com.expense_tracker_backend.repository.PeriodComparisonRepository
+import mk.sorsix.com.expense_tracker_backend.repository.PeriodSummaryRepository
+import org.slf4j.LoggerFactory
+import org.springframework.ai.chat.client.ChatClient
+import org.springframework.stereotype.Service
+import org.springframework.transaction.annotation.Transactional
+import java.math.BigDecimal
+import java.math.RoundingMode
+import java.time.Clock
+import java.time.LocalDate
+import java.time.temporal.ChronoUnit
+
+@Service
+class PeriodComparisonService(
+    private val chatClient: ChatClient,
+    private val aiPrompts: AiPrompts,
+    private val periodSummaryService: PeriodSummaryService,
+    private val periodSummaryRepository: PeriodSummaryRepository,
+    private val periodComparisonRepository: PeriodComparisonRepository,
+    private val clock: Clock,
+) {
+    private val log = LoggerFactory.getLogger(javaClass)
+
+    @Transactional
+    fun compareWithPreviousPeriod(user: User, periodType: PeriodType, date: LocalDate? = null): GeneratePeriodComparisonResult {
+        val current = periodType.startOf(date ?: LocalDate.now(clock))
+        return compare(user, periodType, current, periodType, periodType.previous(current))
+    }
+
+    @Transactional
+    fun compare(user: User, currentPeriodType: PeriodType, currentDate: LocalDate, previousPeriodType: PeriodType, previousDate: LocalDate, ): GeneratePeriodComparisonResult {
+        if (currentPeriodType != previousPeriodType) return GeneratePeriodComparisonResult.InadequatePeriods
+
+        val periodType = currentPeriodType
+        val current = periodType.startOf(currentDate)
+        val previous = periodType.startOf(previousDate)
+
+        if (current == previous) return GeneratePeriodComparisonResult.SamePeriod
+
+        val currentSummary = when (val result = periodSummaryService.generateForUser(user.id, periodType, current)) {
+            is GeneratePeriodSummaryResult.Success -> result.summary
+            is GeneratePeriodSummaryResult.UserNotFound ->
+                error("summary generation reported unknown user for an authenticated principal")
+        }
+        val previousSummary = when (val result = periodSummaryService.generateForUser(user.id, periodType, previous)) {
+            is GeneratePeriodSummaryResult.Success -> result.summary
+            is GeneratePeriodSummaryResult.UserNotFound ->
+                error("summary generation reported unknown user for an authenticated principal")
+        }
+
+        val aiResult = try {
+            chatClient.prompt()
+                .system(aiPrompts.periodComparison)
+                .user(buildPrompt(currentSummary, previousSummary))
+                .call()
+                .entity(GeminiComparisonResult::class.java)
+        } catch (ex: Exception) {
+            log.error("Gemini comparison call failed for userId={} current={} previous={}", user.id, current, previous, ex)
+            null
+        } ?: return GeneratePeriodComparisonResult.AiUnavailable
+
+        if (!aiResult.success) {
+            return GeneratePeriodComparisonResult.InsufficientData(aiResult.comparisonMessage)
+        }
+
+        val existing = periodComparisonRepository
+            .findByCurrentSummaryIdAndPreviousSummaryId(currentSummary.summaryId, previousSummary.summaryId)
+        val saved = periodComparisonRepository.save(
+            (existing ?: PeriodComparison(
+                user = user,
+                currentSummary = periodSummaryRepository.getReferenceById(currentSummary.summaryId),
+                previousSummary = periodSummaryRepository.getReferenceById(previousSummary.summaryId),
+            )).copy(comparisonMessage = aiResult.comparisonMessage)
+        )
+
+        return GeneratePeriodComparisonResult.Success(
+            PeriodComparisonResponse(
+                id = saved.id,
+                userId = user.id,
+                periodType = periodType,
+                currentPeriodStart = current,
+                previousPeriodStart = previous,
+                currentTotalSpent = currentSummary.totalSpent,
+                previousTotalSpent = previousSummary.totalSpent,
+                comparisonMessage = aiResult.comparisonMessage,
+            )
+        )
+    }
+
+    private fun buildPrompt(current: PeriodSummaryResponse, previous: PeriodSummaryResponse): String = buildString {
+        appendLine("=== CURRENT PERIOD ===")
+        appendPeriod(current)
+        appendLine()
+        appendLine("=== EARLIER PERIOD (compare against this) ===")
+        appendPeriod(previous)
+    }
+
+    private fun StringBuilder.appendPeriod(summary: PeriodSummaryResponse) {
+        val start = summary.periodStart
+        val periodType = summary.periodType
+        val end = periodType.endOf(start)
+        val totalDays = periodType.daysIn(start)
+        val isCurrentPeriod = start == periodType.startOf(LocalDate.now(clock))
+        val daysElapsed = if (isCurrentPeriod) ChronoUnit.DAYS.between(start, LocalDate.now(clock)) + 1 else totalDays
+
+        appendLine("Period: $periodType ($start to $end)")
+        appendLine("Days elapsed: $daysElapsed of $totalDays")
+        appendLine("Period complete: ${if (isCurrentPeriod) "no - still in progress" else "yes"}")
+        summary.totalIncome?.let { appendLine("Reported monthly income: ${it.money()}") }
+        appendLine("Total spent so far: ${summary.totalSpent.money()}")
+
+        if (summary.categories.isEmpty()) {
+            appendLine("No spending was recorded for this period.")
+            return
+        }
+
+        appendLine("Spending by category (top-level category, then its subcategories):")
+        summary.categories.forEach { category ->
+            appendLine("- ${category.categoryName}: ${category.totalAmount.money()} across ${category.expenseCount} expense(s)")
+            category.subcategories.forEach { sub ->
+                val label = if (sub.categoryId == category.categoryId) {
+                    "${sub.categoryName} (spent directly on this category)"
+                } else {
+                    sub.categoryName
+                }
+                appendLine("    - $label: ${sub.totalAmount.money()} across ${sub.expenseCount} expense(s)")
+            }
+        }
+    }
+
+    private fun BigDecimal.money(): String = setScale(2, RoundingMode.HALF_UP).toPlainString()
+}
