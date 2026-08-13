@@ -56,7 +56,6 @@ class MonthlySummaryService(
         )
 
         monthlySummaryCategoryRepository.deleteAllBySummaryId(summary.id)
-
         val categoriesById = categoryRepository.findAll().associateBy { it.id }
         monthlySummaryCategoryRepository.saveAll(
             subCategories.mapNotNull { sc ->
