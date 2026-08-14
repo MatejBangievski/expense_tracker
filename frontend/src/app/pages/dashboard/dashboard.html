@@ -1,0 +1,72 @@
+@if (user().loading) {
+  <p class="text-center mt-5">Loading...</p>
+} @else if (user().data; as currentUser) {
+  <div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <h1 class="h4 mb-0">Good morning, {{ currentUser.displayName }}</h1>
+      <button type="button" class="btn btn-outline-secondary btn-sm" (click)="onLogout()">Log out</button>
+    </div>
+
+    <div class="row g-3 mb-4">
+      <div class="col-md-4">
+        <div class="card p-3">
+          <p class="text-secondary small mb-1">Monthly salary</p>
+          <p class="h5 mb-0">{{ currentUser.monthlySalary | currency }}</p>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="card p-3">
+          <p class="text-secondary small mb-1">Total saved</p>
+          <p class="h5 mb-0">{{ currentUser.totalSaved | currency }}</p>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="card p-3">
+          <p class="text-secondary small mb-1">Email</p>
+          <p class="h5 mb-0">{{ currentUser.email }}</p>
+        </div>
+      </div>
+    </div>
+
+    @if (successMessage()) {
+      <div class="alert alert-success py-2">{{ successMessage() }}</div>
+    }
+
+    @if (!editing()) {
+      <button type="button" class="btn btn-primary" (click)="onEdit(currentUser)">Edit profile</button>
+    } @else {
+      <div class="card p-3">
+        <form [formRoot]="profileForm">
+          <div class="mb-3">
+            <label for="displayName" class="form-label">Display name</label>
+            <input id="displayName" type="text" class="form-control" [formField]="profileForm.displayName" />
+            @if (profileForm.displayName().dirty() && profileForm.displayName().invalid()) {
+              @for (error of profileForm.displayName().errors(); track error.kind) {
+                <div class="text-danger small">{{ error.message }}</div>
+              }
+            }
+          </div>
+
+          <div class="mb-3">
+            <label for="monthlySalary" class="form-label">Monthly salary</label>
+            <input id="monthlySalary" type="number" class="form-control" [formField]="profileForm.monthlySalary" />
+            @if (profileForm.monthlySalary().dirty() && profileForm.monthlySalary().invalid()) {
+              @for (error of profileForm.monthlySalary().errors(); track error.kind) {
+                <div class="text-danger small">{{ error.message }}</div>
+              }
+            }
+          </div>
+
+          <button type="submit" class="btn btn-primary" [disabled]="!profileForm().valid() || profileForm().submitting()">
+            @if (profileForm().submitting()) {
+              Saving...
+            } @else {
+              Save
+            }
+          </button>
+          <button type="button" class="btn btn-outline-secondary" (click)="onCancelEdit()">Cancel</button>
+        </form>
+      </div>
+    }
+  </div>
+}

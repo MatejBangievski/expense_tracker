@@ -1,0 +1,53 @@
+<div class="auth-page">
+  <div class="card p-4 auth-card">
+    <h1 class="h4 mb-3">Create an account</h1>
+
+    <form [formRoot]="registerForm">
+      <div class="mb-3">
+        <label for="displayName" class="form-label">Name</label>
+        <input id="displayName" type="text" class="form-control" [formField]="registerForm.displayName" />
+        @if (registerForm.displayName().dirty() && registerForm.displayName().invalid()) {
+          @for (error of registerForm.displayName().errors(); track error.kind) {
+            <div class="text-danger small">{{ error.message }}</div>
+          }
+        }
+      </div>
+
+      <div class="mb-3">
+        <label for="email" class="form-label">Email</label>
+        <input id="email" type="email" class="form-control" [formField]="registerForm.email" />
+        @if (registerForm.email().dirty() && registerForm.email().invalid()) {
+          @for (error of registerForm.email().errors(); track error.kind) {
+            <div class="text-danger small">{{ error.message }}</div>
+          }
+        }
+      </div>
+
+      <div class="mb-3">
+        <label for="password" class="form-label">Password</label>
+        <input id="password" type="password" class="form-control" [formField]="registerForm.password" />
+        @if (registerForm.password().dirty() && registerForm.password().invalid()) {
+          @for (error of registerForm.password().errors(); track error.kind) {
+            <div class="text-danger small">{{ error.message }}</div>
+          }
+        }
+      </div>
+
+      @if (errorMessage()) {
+        <div class="alert alert-danger py-2">{{ errorMessage() }}</div>
+      }
+
+      <button type="submit" class="btn btn-primary w-100" [disabled]="!registerForm().valid() || registerForm().submitting()">
+        @if (registerForm().submitting()) {
+          Creating account...
+        } @else {
+          Register
+        }
+      </button>
+    </form>
+
+    <p class="text-center mt-3 mb-0">
+      Already have an account? <a routerLink="/login">Log in</a>
+    </p>
+  </div>
+</div>
