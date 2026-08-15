@@ -20,6 +20,6 @@ data class PeriodComparison(
     @JoinColumn(name = "previous_summary_id", nullable = false)
     val previousSummary: PeriodSummary = PeriodSummary(),
 
-    @Column(name = "comparison_message", nullable = false, columnDefinition = "TEXT")
-    val comparisonMessage: String = "",
+    @Column(name = "comparison_message", columnDefinition = "TEXT")
+    val comparisonMessage: String? = null,
 )

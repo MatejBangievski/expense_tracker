@@ -1,11 +1,19 @@
 package mk.sorsix.com.expense_tracker_backend.domain.dto
 
+import mk.sorsix.com.expense_tracker_backend.domain.CategoryBudgetSuggestion
 import java.math.BigDecimal
 import java.time.LocalDate
 
 data class GenerateMonthlySavingPlanRequest(
     val budgetLimit: BigDecimal,
     val totalIncome: BigDecimal? = null,
+)
+
+data class ManualSavingPlanRequest(
+    val budgetLimit: BigDecimal,
+    val totalIncome: BigDecimal? = null,
+    val recommendationMessage: String? = null,
+    val categoryLimits: List<CategoryBudgetSuggestion> = emptyList(),
 )
 
 data class MonthlySavingPlanResponse(

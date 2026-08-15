@@ -6,6 +6,4 @@ sealed class GeneratePeriodComparisonResult {
     data class Success(val comparison: PeriodComparisonResponse) : GeneratePeriodComparisonResult()
     object SamePeriod : GeneratePeriodComparisonResult()
     object InadequatePeriods : GeneratePeriodComparisonResult()
-    data class InsufficientData(val message: String) : GeneratePeriodComparisonResult()
-    object AiUnavailable : GeneratePeriodComparisonResult()
 }

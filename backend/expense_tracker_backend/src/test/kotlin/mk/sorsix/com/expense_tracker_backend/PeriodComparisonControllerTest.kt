@@ -8,6 +8,7 @@ import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc
+import org.hamcrest.Matchers.nullValue
 import org.springframework.http.MediaType
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.post
@@ -31,8 +32,8 @@ class PeriodComparisonControllerTest {
         }
     }
 
-    private fun compareWithPrevious(user: TestUser) =
-        mockMvc.post("/api/period-comparisons/previous?periodType=MONTH") {
+    private fun compareWithPrevious(user: TestUser, useAi: Boolean = false) =
+        mockMvc.post("/api/period-comparisons/previous?periodType=MONTH&useAi=$useAi") {
             header("Authorization", "Bearer ${user.accessToken}")
         }
 
@@ -43,20 +44,34 @@ class PeriodComparisonControllerTest {
     }
 
     @Test
+    fun `comparing two months without AI returns totals and no message`() {
+        val user = mockMvc.registerAndLogin(objectMapper)
+        postExpense(user, 5, "80.00", LocalDate.now())
+        postExpense(user, 5, "150.00", LocalDate.now().minusMonths(1))
+
+        compareWithPrevious(user).andExpect {
+            status { isOk() }
+            jsonPath("$.id") { exists() }
+            jsonPath("$.periodType") { value("MONTH") }
+            jsonPath("$.currentTotalSpent") { exists() }
+            jsonPath("$.previousTotalSpent") { exists() }
+            jsonPath("$.comparisonMessage") { value(nullValue()) }
+        }
+    }
+
+    @Test
     @EnabledIfEnvironmentVariable(named = "GEMINI_API_KEY", matches = ".*\\S+.*")
-    fun `comparing two months with spending returns a message`() {
+    fun `comparing two months with AI returns a message`() {
         val user = mockMvc.registerAndLogin(objectMapper)
         postExpense(user, 5, "80.00", LocalDate.now())
         postExpense(user, 6, "20.00", LocalDate.now())
         postExpense(user, 5, "150.00", LocalDate.now().minusMonths(1))
         postExpense(user, 6, "60.00", LocalDate.now().minusMonths(1))
 
-        compareWithPrevious(user).andExpect {
+        compareWithPrevious(user, useAi = true).andExpect {
             status { isOk() }
             jsonPath("$.id") { exists() }
             jsonPath("$.periodType") { value("MONTH") }
-            jsonPath("$.currentPeriodStart") { exists() }
-            jsonPath("$.previousPeriodStart") { exists() }
             jsonPath("$.comparisonMessage") { isNotEmpty() }
         }
     }

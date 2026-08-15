@@ -19,5 +19,5 @@ data class PeriodComparisonResponse(
     val previousPeriodStart: LocalDate,
     val currentTotalSpent: BigDecimal,
     val previousTotalSpent: BigDecimal,
-    val comparisonMessage: String,
+    val comparisonMessage: String?,
 )

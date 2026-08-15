@@ -17,6 +17,7 @@ import mk.sorsix.com.expense_tracker_backend.repository.UserRepository
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.math.BigDecimal
+import java.time.Clock
 import java.time.LocalDate
 
 
@@ -27,6 +28,7 @@ class PeriodSummaryService(
     private val userRepository: UserRepository,
     private val periodSummaryRepository: PeriodSummaryRepository,
     private val periodSummaryCategoryRepository: PeriodSummaryCategoryRepository,
+    private val clock: Clock,
 ) {
     @Transactional
     fun generateForUser(userId: Long, periodType: PeriodType, date: LocalDate, totalIncomeOverride: BigDecimal? = null): GeneratePeriodSummaryResult {
@@ -71,6 +73,10 @@ class PeriodSummaryService(
                 }
             }
         )
+
+        if (periodType == PeriodType.WEEK && periodEnd.isBefore(LocalDate.now(clock))) {
+            expenseRepository.deactivateByUserAndDateRange(userId, periodStart, periodEnd)
+        }
 
         return GeneratePeriodSummaryResult.Success(toResponse(summary, subCategories, categoriesById))
     }

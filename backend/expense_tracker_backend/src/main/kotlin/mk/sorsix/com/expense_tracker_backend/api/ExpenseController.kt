@@ -71,6 +71,9 @@ class ExpenseController(
 
             is UpdateExpenseResult.NotOwner -> ResponseEntity.status(HttpStatus.FORBIDDEN)
                 .body(mapOf("error" to "You do not own this expense"))
+
+            is UpdateExpenseResult.ExpenseLocked -> ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(mapOf("error" to "This expense is locked because its week has been summarized"))
         }
 
     @DeleteMapping("/{id}")
@@ -85,5 +88,8 @@ class ExpenseController(
 
             is DeleteExpenseResult.NotOwner -> ResponseEntity.status(HttpStatus.FORBIDDEN)
                 .body(mapOf("error" to "You do not own this expense"))
+
+            is DeleteExpenseResult.ExpenseLocked -> ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(mapOf("error" to "This expense is locked because its week has been summarized"))
         }
 }

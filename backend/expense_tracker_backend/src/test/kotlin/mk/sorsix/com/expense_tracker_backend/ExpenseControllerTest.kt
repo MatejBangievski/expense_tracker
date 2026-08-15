@@ -1,13 +1,17 @@
 package mk.sorsix.com.expense_tracker_backend.api
 
 import com.fasterxml.jackson.databind.ObjectMapper
+import mk.sorsix.com.expense_tracker_backend.domain.PeriodType
 import mk.sorsix.com.expense_tracker_backend.registerAndLogin
+import mk.sorsix.com.expense_tracker_backend.repository.UserRepository
+import mk.sorsix.com.expense_tracker_backend.service.PeriodSummaryService
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc
 import org.springframework.http.MediaType
 import org.springframework.test.web.servlet.*
+import java.time.LocalDate
 
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -18,6 +22,12 @@ class ExpenseControllerTest {
 
     @Autowired
     lateinit var objectMapper: ObjectMapper
+
+    @Autowired
+    lateinit var periodSummaryService: PeriodSummaryService
+
+    @Autowired
+    lateinit var userRepository: UserRepository
 
     @Test
     fun `list expenses requires authentication`() {
@@ -208,5 +218,51 @@ class ExpenseControllerTest {
             status { isOk() }
             jsonPath("$[0].categoryName") { value("Food") }
         }
+    }
+
+    @Test
+    fun `summarizing a completed week locks its expenses`() {
+        val user = mockMvc.registerAndLogin(objectMapper)
+        val pastWeekDay = LocalDate.of(2025, 1, 7) // Tuesday of the ISO week Mon 2025-01-06..Sun 2025-01-12
+        val createResponse = mockMvc.post("/api/expenses") {
+            contentType = MediaType.APPLICATION_JSON
+            header("Authorization", "Bearer ${user.accessToken}")
+            content = """{"categoryId":5,"amount":50.00,"expenseDate":"$pastWeekDay"}"""
+        }.andReturn().response.contentAsString
+        val expenseId = objectMapper.readTree(createResponse).get("id").asLong()
+        val userId = userRepository.findByEmail(user.email)!!.id
+
+        periodSummaryService.generateForUser(userId, PeriodType.WEEK, pastWeekDay)
+
+        mockMvc.put("/api/expenses/$expenseId") {
+            contentType = MediaType.APPLICATION_JSON
+            header("Authorization", "Bearer ${user.accessToken}")
+            content = """{"categoryId":5,"amount":99.99,"expenseDate":"$pastWeekDay"}"""
+        }.andExpect { status { isConflict() } }
+
+        mockMvc.delete("/api/expenses/$expenseId") {
+            header("Authorization", "Bearer ${user.accessToken}")
+        }.andExpect { status { isConflict() } }
+    }
+
+    @Test
+    fun `summarizing the current week leaves its expenses editable`() {
+        val user = mockMvc.registerAndLogin(objectMapper)
+        val today = LocalDate.now()
+        val createResponse = mockMvc.post("/api/expenses") {
+            contentType = MediaType.APPLICATION_JSON
+            header("Authorization", "Bearer ${user.accessToken}")
+            content = """{"categoryId":5,"amount":50.00,"expenseDate":"$today"}"""
+        }.andReturn().response.contentAsString
+        val expenseId = objectMapper.readTree(createResponse).get("id").asLong()
+        val userId = userRepository.findByEmail(user.email)!!.id
+
+        periodSummaryService.generateForUser(userId, PeriodType.WEEK, today)
+
+        mockMvc.put("/api/expenses/$expenseId") {
+            contentType = MediaType.APPLICATION_JSON
+            header("Authorization", "Bearer ${user.accessToken}")
+            content = """{"categoryId":5,"amount":75.00,"expenseDate":"$today"}"""
+        }.andExpect { status { isOk() } }
     }
 }

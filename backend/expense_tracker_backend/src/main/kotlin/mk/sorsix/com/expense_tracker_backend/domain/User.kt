@@ -26,4 +26,7 @@ data class User(
 
     val monthlySalary: BigDecimal = BigDecimal.ZERO,
     val totalSaved: BigDecimal = BigDecimal.ZERO,
+
+    @Column(name = "gemini_api_key")
+    val aiApiKey: String? = null,
 )

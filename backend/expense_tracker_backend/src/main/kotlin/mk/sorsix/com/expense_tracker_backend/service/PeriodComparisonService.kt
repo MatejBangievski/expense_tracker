@@ -1,6 +1,8 @@
 package mk.sorsix.com.expense_tracker_backend.service
 
 import mk.sorsix.com.expense_tracker_backend.config.AiPrompts
+import mk.sorsix.com.expense_tracker_backend.config.UserChatClientProvider
+import mk.sorsix.com.expense_tracker_backend.domain.FindPeriodSummaryResult
 import mk.sorsix.com.expense_tracker_backend.domain.GeminiComparisonResult
 import mk.sorsix.com.expense_tracker_backend.domain.GeneratePeriodComparisonResult
 import mk.sorsix.com.expense_tracker_backend.domain.GeneratePeriodSummaryResult
@@ -12,7 +14,6 @@ import mk.sorsix.com.expense_tracker_backend.domain.dto.PeriodSummaryResponse
 import mk.sorsix.com.expense_tracker_backend.repository.PeriodComparisonRepository
 import mk.sorsix.com.expense_tracker_backend.repository.PeriodSummaryRepository
 import org.slf4j.LoggerFactory
-import org.springframework.ai.chat.client.ChatClient
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.math.BigDecimal
@@ -23,7 +24,7 @@ import java.time.temporal.ChronoUnit
 
 @Service
 class PeriodComparisonService(
-    private val chatClient: ChatClient,
+    private val userChatClientProvider: UserChatClientProvider,
     private val aiPrompts: AiPrompts,
     private val periodSummaryService: PeriodSummaryService,
     private val periodSummaryRepository: PeriodSummaryRepository,
@@ -33,69 +34,80 @@ class PeriodComparisonService(
     private val log = LoggerFactory.getLogger(javaClass)
 
     @Transactional
-    fun compareWithPreviousPeriod(user: User, periodType: PeriodType, date: LocalDate? = null): GeneratePeriodComparisonResult {
+    fun compareWithPreviousPeriod(user: User, periodType: PeriodType, date: LocalDate? = null, useAi: Boolean = false): GeneratePeriodComparisonResult {
         val current = periodType.startOf(date ?: LocalDate.now(clock))
-        return compare(user, periodType, current, periodType, periodType.previous(current))
+        return compare(user, periodType, current, periodType, periodType.previous(current), useAi)
     }
 
     @Transactional
-    fun compare(user: User, currentPeriodType: PeriodType, currentDate: LocalDate, previousPeriodType: PeriodType, previousDate: LocalDate, ): GeneratePeriodComparisonResult {
-        if (currentPeriodType != previousPeriodType) return GeneratePeriodComparisonResult.InadequatePeriods
+    fun compare(user: User, currentPeriodType: PeriodType, currentDate: LocalDate, previousPeriodType: PeriodType, previousDate: LocalDate, useAi: Boolean = false): GeneratePeriodComparisonResult {
+        if (currentPeriodType != previousPeriodType) {
+            return GeneratePeriodComparisonResult.InadequatePeriods
+        }
 
         val periodType = currentPeriodType
         val current = periodType.startOf(currentDate)
         val previous = periodType.startOf(previousDate)
 
-        if (current == previous) return GeneratePeriodComparisonResult.SamePeriod
-
-        val currentSummary = when (val result = periodSummaryService.generateForUser(user.id, periodType, current)) {
-            is GeneratePeriodSummaryResult.Success -> result.summary
-            is GeneratePeriodSummaryResult.UserNotFound ->
-                error("summary generation reported unknown user for an authenticated principal")
-        }
-        val previousSummary = when (val result = periodSummaryService.generateForUser(user.id, periodType, previous)) {
-            is GeneratePeriodSummaryResult.Success -> result.summary
-            is GeneratePeriodSummaryResult.UserNotFound ->
-                error("summary generation reported unknown user for an authenticated principal")
+        if (current == previous) {
+            return GeneratePeriodComparisonResult.SamePeriod
         }
 
-        val aiResult = try {
-            chatClient.prompt()
-                .system(aiPrompts.periodComparison)
-                .user(buildPrompt(currentSummary, previousSummary))
-                .call()
-                .entity(GeminiComparisonResult::class.java)
-        } catch (ex: Exception) {
-            log.error("Gemini comparison call failed for userId={} current={} previous={}", user.id, current, previous, ex)
-            null
-        } ?: return GeneratePeriodComparisonResult.AiUnavailable
+        val currentSummary = findOrCreateSummary(user, periodType, current)
+        val previousSummary = findOrCreateSummary(user, periodType, previous)
 
-        if (!aiResult.success) {
-            return GeneratePeriodComparisonResult.InsufficientData(aiResult.comparisonMessage)
-        }
-
-        val existing = periodComparisonRepository
+        var comparison = periodComparisonRepository
             .findByCurrentSummaryIdAndPreviousSummaryId(currentSummary.summaryId, previousSummary.summaryId)
-        val saved = periodComparisonRepository.save(
-            (existing ?: PeriodComparison(
-                user = user,
-                currentSummary = periodSummaryRepository.getReferenceById(currentSummary.summaryId),
-                previousSummary = periodSummaryRepository.getReferenceById(previousSummary.summaryId),
-            )).copy(comparisonMessage = aiResult.comparisonMessage)
-        )
+            ?: periodComparisonRepository.save(
+                PeriodComparison(
+                    user = user,
+                    currentSummary = periodSummaryRepository.getReferenceById(currentSummary.summaryId),
+                    previousSummary = periodSummaryRepository.getReferenceById(previousSummary.summaryId),
+                )
+            )
+
+        if (useAi) {
+            generateMessage(user, currentSummary, previousSummary)?.let {
+                comparison = periodComparisonRepository.save(comparison.copy(comparisonMessage = it))
+            }
+        }
 
         return GeneratePeriodComparisonResult.Success(
             PeriodComparisonResponse(
-                id = saved.id,
+                id = comparison.id,
                 userId = user.id,
                 periodType = periodType,
                 currentPeriodStart = current,
                 previousPeriodStart = previous,
                 currentTotalSpent = currentSummary.totalSpent,
                 previousTotalSpent = previousSummary.totalSpent,
-                comparisonMessage = aiResult.comparisonMessage,
+                comparisonMessage = comparison.comparisonMessage,
             )
         )
+    }
+
+    private fun findOrCreateSummary(user: User, periodType: PeriodType, date: LocalDate): PeriodSummaryResponse =
+        when (val found = periodSummaryService.find(user.id, periodType, date)) {
+            is FindPeriodSummaryResult.Success -> found.summary
+            is FindPeriodSummaryResult.SummaryNotFound ->
+                when (val generated = periodSummaryService.generateForUser(user.id, periodType, date)) {
+                    is GeneratePeriodSummaryResult.Success -> generated.summary
+                    is GeneratePeriodSummaryResult.UserNotFound ->
+                        error("summary generation reported unknown user for an authenticated principal")
+                }
+        }
+
+    private fun generateMessage(user: User, current: PeriodSummaryResponse, previous: PeriodSummaryResponse): String? = try {
+        userChatClientProvider.forUser(user).prompt()
+            .system(aiPrompts.periodComparison)
+            .user(buildPrompt(current, previous))
+            .call()
+            .entity(GeminiComparisonResult::class.java)
+            ?.takeIf { it.success }
+            ?.comparisonMessage
+    } catch (ex: Exception) {
+        log.error("Gemini comparison call failed for userId={}", user.id, ex)
+        null
     }
 
     private fun buildPrompt(current: PeriodSummaryResponse, previous: PeriodSummaryResponse): String = buildString {

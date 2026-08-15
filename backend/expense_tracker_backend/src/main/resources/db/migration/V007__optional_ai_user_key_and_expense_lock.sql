@@ -1,0 +1,5 @@
+ALTER TABLE period_comparison ALTER COLUMN comparison_message DROP NOT NULL;
+
+ALTER TABLE app_user ADD COLUMN gemini_api_key VARCHAR(512);
+
+ALTER TABLE expense ADD COLUMN active BOOLEAN NOT NULL DEFAULT TRUE;
