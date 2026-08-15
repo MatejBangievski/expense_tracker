@@ -10,7 +10,7 @@ import org.springframework.test.web.servlet.*
 
 @SpringBootTest
 @AutoConfigureMockMvc
-class CategoryControllerTest {
+class CategoryControllerTest : AbstractIntegrationTest() {
 
     @Autowired
     lateinit var mockMvc: MockMvc

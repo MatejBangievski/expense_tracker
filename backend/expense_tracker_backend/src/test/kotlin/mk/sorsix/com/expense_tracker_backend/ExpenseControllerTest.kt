@@ -1,5 +1,7 @@
 package mk.sorsix.com.expense_tracker_backend.api
 
+import mk.sorsix.com.expense_tracker_backend.AbstractIntegrationTest
+
 import com.fasterxml.jackson.databind.ObjectMapper
 import mk.sorsix.com.expense_tracker_backend.domain.PeriodType
 import mk.sorsix.com.expense_tracker_backend.registerAndLogin
@@ -15,7 +17,7 @@ import java.time.LocalDate
 
 @SpringBootTest
 @AutoConfigureMockMvc
-class ExpenseControllerTest {
+class ExpenseControllerTest : AbstractIntegrationTest() {
 
     @Autowired
     lateinit var mockMvc: MockMvc

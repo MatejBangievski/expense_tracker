@@ -1,5 +1,7 @@
 package mk.sorsix.com.expense_tracker_backend.ai
 
+import mk.sorsix.com.expense_tracker_backend.AbstractIntegrationTest
+
 import mk.sorsix.com.expense_tracker_backend.config.AiPrompts
 import mk.sorsix.com.expense_tracker_backend.domain.GeminiApiResult
 import mk.sorsix.com.expense_tracker_backend.domain.GeminiComparisonResult
@@ -13,7 +15,7 @@ import org.springframework.boot.test.context.SpringBootTest
 
 @SpringBootTest
 @EnabledIfEnvironmentVariable(named = "GEMINI_API_KEY", matches = ".*\\S+.*")
-class GeminiLiveIntegrationTest {
+class GeminiLiveIntegrationTest : AbstractIntegrationTest() {
 
     @Autowired
     lateinit var chatClientBuilder: ChatClient.Builder
