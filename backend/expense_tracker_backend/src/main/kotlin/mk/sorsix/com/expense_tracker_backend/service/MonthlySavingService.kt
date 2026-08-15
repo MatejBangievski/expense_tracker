@@ -86,14 +86,25 @@ class MonthlySavingService(
 
         val limitsByCategory = aiResult.monthlyPlan?.categoryLimits?.associateBy { it.categoryName } ?: emptyMap()
         val actualsByCategory = summary.categories.associateBy { it.categoryName }
-        val allCategoryNames = limitsByCategory.keys + actualsByCategory.keys
 
+        //        val budgets = allCategoryNames.mapNotNull { categoryName ->
+//            val category = categoryRepository.findByNameIgnoreCase(categoryName)
+//            if (category == null) {
+//                null
+//            } else {
+//                val existingBudget = budgetRepository.findByMonthlySavingIdAndCategoryId(savedSaving.id, category.id)
+        // stara verzija proverena deka raboti
+        val allCategoryNames = limitsByCategory.keys + actualsByCategory.keys
+        val categoriesByName = categoryRepository.findByNameIgnoreCaseIn(allCategoryNames)
+            .associateBy { it.name.lowercase() }
+        val existingBudgetsByCategoryId = budgetRepository.findByMonthlySavingId(savedSaving.id)
+            .associateBy { it.category.id }
         val budgets = allCategoryNames.mapNotNull { categoryName ->
-            val category = categoryRepository.findByNameIgnoreCase(categoryName)
+            val category = categoriesByName[categoryName.lowercase()]
             if (category == null) {
                 null
             } else {
-                val existingBudget = budgetRepository.findByMonthlySavingIdAndCategoryId(savedSaving.id, category.id)
+                val existingBudget = existingBudgetsByCategoryId[category.id]
                 val limit = limitsByCategory[categoryName]
                 val actual = actualsByCategory[categoryName]
                 budgetRepository.save(
