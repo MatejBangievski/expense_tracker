@@ -12,7 +12,7 @@ import java.util.UUID
 
 @SpringBootTest
 @AutoConfigureMockMvc
-class AuthControllerTest {
+class AuthControllerTest : AbstractIntegrationTest() {
 
     @Autowired
     lateinit var mockMvc: MockMvc

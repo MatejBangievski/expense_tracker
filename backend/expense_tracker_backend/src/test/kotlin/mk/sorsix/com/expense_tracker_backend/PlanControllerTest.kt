@@ -1,5 +1,7 @@
 package mk.sorsix.com.expense_tracker_backend.api
 
+import mk.sorsix.com.expense_tracker_backend.AbstractIntegrationTest
+
 import com.fasterxml.jackson.databind.ObjectMapper
 import mk.sorsix.com.expense_tracker_backend.registerAndLogin
 import org.junit.jupiter.api.Test
@@ -11,7 +13,7 @@ import org.springframework.test.web.servlet.*
 
 @SpringBootTest
 @AutoConfigureMockMvc
-class PlanControllerTest {
+class PlanControllerTest : AbstractIntegrationTest() {
 
     @Autowired
     lateinit var mockMvc: MockMvc

@@ -5,13 +5,13 @@ import java.math.BigDecimal
 
 
 @Entity
-data class  MonthlySummaryCategory(
+data class PeriodSummaryCategory(
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     val id: Long = 0,
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "monthly_summary_id", nullable = false)
-    val monthlySummary: MonthlySummary = MonthlySummary(),
+    @JoinColumn(name = "period_summary_id", nullable = false)
+    val periodSummary: PeriodSummary = PeriodSummary(),
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "category_id", nullable = false)

@@ -1,20 +1,23 @@
 package mk.sorsix.com.expense_tracker_backend.service
 
+import mk.sorsix.com.expense_tracker_backend.config.AiPrompts
+import mk.sorsix.com.expense_tracker_backend.config.UserChatClientProvider
 import mk.sorsix.com.expense_tracker_backend.domain.Budget
+import mk.sorsix.com.expense_tracker_backend.domain.CategoryBudgetSuggestion
 import mk.sorsix.com.expense_tracker_backend.domain.GeminiApiResult
 import mk.sorsix.com.expense_tracker_backend.domain.GenerateMonthlySavingPlanResult
-import mk.sorsix.com.expense_tracker_backend.domain.GenerateMonthlySummaryResult
+import mk.sorsix.com.expense_tracker_backend.domain.GeneratePeriodSummaryResult
 import mk.sorsix.com.expense_tracker_backend.domain.MonthlySaving
+import mk.sorsix.com.expense_tracker_backend.domain.PeriodType
 import mk.sorsix.com.expense_tracker_backend.domain.User
 import mk.sorsix.com.expense_tracker_backend.domain.dto.CategoryLimitResponse
+import mk.sorsix.com.expense_tracker_backend.domain.dto.ManualSavingPlanRequest
 import mk.sorsix.com.expense_tracker_backend.domain.dto.MonthlySavingPlanResponse
-import mk.sorsix.com.expense_tracker_backend.domain.dto.MonthlySummaryResponse
+import mk.sorsix.com.expense_tracker_backend.domain.dto.PeriodSummaryResponse
 import mk.sorsix.com.expense_tracker_backend.repository.BudgetRepository
 import mk.sorsix.com.expense_tracker_backend.repository.CategoryRepository
 import mk.sorsix.com.expense_tracker_backend.repository.MonthlySavingRepository
-import mk.sorsix.com.expense_tracker_backend.repository.UserRepository
 import org.slf4j.LoggerFactory
-import org.springframework.ai.chat.client.ChatClient
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.math.BigDecimal
@@ -24,12 +27,12 @@ import java.time.LocalDate
 
 @Service
 class MonthlySavingService(
-    private val chatClient: ChatClient,
-    private val monthlySummaryService: MonthlySummaryService,
+    private val userChatClientProvider: UserChatClientProvider,
+    private val aiPrompts: AiPrompts,
+    private val periodSummaryService: PeriodSummaryService,
     private val categoryRepository: CategoryRepository,
     private val budgetRepository: BudgetRepository,
     private val monthlySavingRepository: MonthlySavingRepository,
-    private val userRepository: UserRepository,
     private val clock: Clock,
 ) {
     private val log = LoggerFactory.getLogger(javaClass)
@@ -43,27 +46,21 @@ class MonthlySavingService(
                 MonthlySaving(user = user, savingMonth = month, totalIncome = user.monthlySalary)
             )
 
-
     @Transactional
-    fun generateWithAIAndPersist(userId: Long, nextPeriodBudgetLimit: BigDecimal, totalIncome: BigDecimal? = null): GenerateMonthlySavingPlanResult {
+    fun generateWithAIAndPersist(user: User, nextPeriodBudgetLimit: BigDecimal, totalIncome: BigDecimal? = null): GenerateMonthlySavingPlanResult {
         val currentMonth = LocalDate.now(clock).withDayOfMonth(1)
         val savingMonth = currentMonth.plusMonths(1)
 
-        val user = userRepository.findById(userId).orElse(null)
-            ?: return GenerateMonthlySavingPlanResult.UserNotFound
-
-        val summary = when (val result = monthlySummaryService.generateForUser(userId, currentMonth, totalIncome)) {
-            is GenerateMonthlySummaryResult.Success -> result.summary
-            is GenerateMonthlySummaryResult.UserNotFound -> return GenerateMonthlySavingPlanResult.UserNotFound
-        }
+        val summary = generateMonthSummary(user, currentMonth, totalIncome)
 
         val aiResult = try {
-            chatClient.prompt()
+            userChatClientProvider.forUser(user).prompt()
+                .system(aiPrompts.monthlySavingRecommendation)
                 .user(buildPrompt(summary, savingMonth, nextPeriodBudgetLimit))
                 .call()
                 .entity(GeminiApiResult::class.java)
         } catch (ex: Exception) {
-            log.error("Gemini call failed for userId={} month={}", userId, savingMonth, ex)
+            log.error("Gemini call failed for userId={} month={}", user.id, savingMonth, ex)
             null
         } ?: return GenerateMonthlySavingPlanResult.AiUnavailable
 
@@ -71,21 +68,38 @@ class MonthlySavingService(
             return GenerateMonthlySavingPlanResult.InsufficientData(aiResult.recommendationMessage)
         }
 
+        return persistPlan(user, savingMonth, nextPeriodBudgetLimit, totalIncome, summary, aiResult.recommendationMessage, aiResult.monthlyPlan?.categoryLimits ?: emptyList(),)
+    }
+
+    @Transactional
+    fun createManualPlan(user: User, request: ManualSavingPlanRequest): GenerateMonthlySavingPlanResult {
+        val currentMonth = LocalDate.now(clock).withDayOfMonth(1)
+        val savingMonth = currentMonth.plusMonths(1)
+
+        val summary = generateMonthSummary(user, currentMonth, request.totalIncome)
+
+        return persistPlan(
+            user, savingMonth, request.budgetLimit, request.totalIncome, summary,
+            request.recommendationMessage, request.categoryLimits,
+        )
+    }
+
+    private fun persistPlan(user: User, savingMonth: LocalDate, nextPeriodBudgetLimit: BigDecimal, totalIncome: BigDecimal?, summary: PeriodSummaryResponse, recommendationMessage: String?, categoryLimits: List<CategoryBudgetSuggestion>): GenerateMonthlySavingPlanResult {
         // Mozhebi nekoja bolje logika ovde
         val totalSaved = summary.totalSpent.subtract(nextPeriodBudgetLimit).max(BigDecimal.ZERO)
 
-        val existingSaving = monthlySavingRepository.findByUserIdAndSavingMonth(userId, savingMonth)
+        val existingSaving = monthlySavingRepository.findByUserIdAndSavingMonth(user.id, savingMonth)
         val savedSaving = monthlySavingRepository.save(
             (existingSaving ?: MonthlySaving(user = user, savingMonth = savingMonth)).copy(
                 totalBudgetLimit = nextPeriodBudgetLimit,
                 totalIncome = totalIncome,
                 totalSpent = summary.totalSpent,
                 totalSaved = totalSaved,
-                recommendationMessage = aiResult.recommendationMessage,
+                recommendationMessage = recommendationMessage,
             )
         )
 
-        val limitsByCategory = aiResult.monthlyPlan?.categoryLimits?.associateBy { it.categoryName } ?: emptyMap()
+        val limitsByCategory = categoryLimits.associateBy { it.categoryName }
         val actualsByCategory = summary.categories.associateBy { it.categoryName }
 
         //        val budgets = allCategoryNames.mapNotNull { categoryName ->
@@ -121,6 +135,13 @@ class MonthlySavingService(
         return GenerateMonthlySavingPlanResult.Success(savedSaving.toResponse(budgets))
     }
 
+    private fun generateMonthSummary(user: User, month: LocalDate, totalIncome: BigDecimal?): PeriodSummaryResponse =
+        when (val result = periodSummaryService.generateForUser(user.id, PeriodType.MONTH, month, totalIncome)) {
+            is GeneratePeriodSummaryResult.Success -> result.summary
+            is GeneratePeriodSummaryResult.UserNotFound ->
+                error("summary generation reported unknown user for an authenticated principal")
+        }
+
     private fun MonthlySaving.toResponse(budgets: List<Budget>) = MonthlySavingPlanResponse(
         id = id,
         savingMonth = savingMonth,
@@ -134,8 +155,8 @@ class MonthlySavingService(
             .sortedByDescending { it.monthlyLimit },
     )
 
-    private fun buildPrompt(summary: MonthlySummaryResponse, savingMonth: LocalDate, nextPeriodBudgetLimit: BigDecimal, ): String = buildString {
-        appendLine("Spending summary for month: ${summary.summaryMonth}")
+    private fun buildPrompt(summary: PeriodSummaryResponse, savingMonth: LocalDate, nextPeriodBudgetLimit: BigDecimal, ): String = buildString {
+        appendLine("Spending summary for month: ${summary.periodStart}")
         summary.totalIncome?.let { appendLine("Reported monthly income: ${it.money()}") }
         appendLine("Total spent this month: ${summary.totalSpent.money()}")
         appendLine()

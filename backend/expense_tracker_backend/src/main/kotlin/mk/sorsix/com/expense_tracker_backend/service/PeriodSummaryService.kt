@@ -1,41 +1,44 @@
 package mk.sorsix.com.expense_tracker_backend.service
 
 import mk.sorsix.com.expense_tracker_backend.domain.Category
-import mk.sorsix.com.expense_tracker_backend.domain.FindMonthlySummaryResult
-import mk.sorsix.com.expense_tracker_backend.domain.GenerateMonthlySummaryResult
-import mk.sorsix.com.expense_tracker_backend.domain.MonthlySummary
-import mk.sorsix.com.expense_tracker_backend.domain.MonthlySummaryCategory
+import mk.sorsix.com.expense_tracker_backend.domain.FindPeriodSummaryResult
+import mk.sorsix.com.expense_tracker_backend.domain.GeneratePeriodSummaryResult
+import mk.sorsix.com.expense_tracker_backend.domain.PeriodSummary
+import mk.sorsix.com.expense_tracker_backend.domain.PeriodSummaryCategory
+import mk.sorsix.com.expense_tracker_backend.domain.PeriodType
 import mk.sorsix.com.expense_tracker_backend.domain.dto.CategorySummaryResponse
-import mk.sorsix.com.expense_tracker_backend.domain.dto.MonthlySummaryResponse
+import mk.sorsix.com.expense_tracker_backend.domain.dto.PeriodSummaryResponse
 import mk.sorsix.com.expense_tracker_backend.domain.dto.SubCategorySummaryResponse
 import mk.sorsix.com.expense_tracker_backend.repository.CategoryRepository
 import mk.sorsix.com.expense_tracker_backend.repository.ExpenseRepository
-import mk.sorsix.com.expense_tracker_backend.repository.MonthlySummaryCategoryRepository
-import mk.sorsix.com.expense_tracker_backend.repository.MonthlySummaryRepository
+import mk.sorsix.com.expense_tracker_backend.repository.PeriodSummaryCategoryRepository
+import mk.sorsix.com.expense_tracker_backend.repository.PeriodSummaryRepository
 import mk.sorsix.com.expense_tracker_backend.repository.UserRepository
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.math.BigDecimal
+import java.time.Clock
 import java.time.LocalDate
 
 
 @Service
-class MonthlySummaryService(
+class PeriodSummaryService(
     private val expenseRepository: ExpenseRepository,
     private val categoryRepository: CategoryRepository,
     private val userRepository: UserRepository,
-    private val monthlySummaryRepository: MonthlySummaryRepository,
-    private val monthlySummaryCategoryRepository: MonthlySummaryCategoryRepository,
+    private val periodSummaryRepository: PeriodSummaryRepository,
+    private val periodSummaryCategoryRepository: PeriodSummaryCategoryRepository,
+    private val clock: Clock,
 ) {
     @Transactional
-    fun generateForUser(userId: Long, month: LocalDate, totalIncomeOverride: BigDecimal? = null): GenerateMonthlySummaryResult {
-        val monthStart = month.withDayOfMonth(1)
-        val monthEnd = monthStart.plusMonths(1).minusDays(1)
+    fun generateForUser(userId: Long, periodType: PeriodType, date: LocalDate, totalIncomeOverride: BigDecimal? = null): GeneratePeriodSummaryResult {
+        val periodStart = periodType.startOf(date)
+        val periodEnd = periodType.endOf(periodStart)
 
         val user = userRepository.findById(userId).orElse(null)
-            ?: return GenerateMonthlySummaryResult.UserNotFound
+            ?: return GeneratePeriodSummaryResult.UserNotFound
 
-        val expenses = expenseRepository.findByUserIdAndExpenseDateBetween(userId, monthStart, monthEnd)
+        val expenses = expenseRepository.findByUserIdAndExpenseDateBetween(userId, periodStart, periodEnd)
         val subCategories = expenses.groupBy { it.category }
             .map { (category, categoryExpenses) ->
                 subCategorySpend(
@@ -47,21 +50,22 @@ class MonthlySummaryService(
         val totalSpent = subCategories.fold(BigDecimal.ZERO) { acc, subCategory -> acc + subCategory.totalAmount }
         val income = totalIncomeOverride ?: user.monthlySalary
 
-        val existing = monthlySummaryRepository.findByUserIdAndSummaryMonth(userId, monthStart)
-        val summary = monthlySummaryRepository.save(
-            (existing ?: MonthlySummary(user = user, summaryMonth = monthStart)).copy(
+        val existing = periodSummaryRepository.findByUserIdAndPeriodTypeAndPeriodStart(userId, periodType, periodStart)
+        val summary = periodSummaryRepository.save(
+            (existing ?: PeriodSummary(user = user, periodType = periodType, periodStart = periodStart)).copy(
                 totalSpent = totalSpent,
                 totalIncome = income,
             )
         )
 
-        monthlySummaryCategoryRepository.deleteAllBySummaryId(summary.id)
-        val categoriesById = categoryRepository.findAll().associateBy { it.id }
-        monthlySummaryCategoryRepository.saveAll(
+        periodSummaryCategoryRepository.deleteAllBySummaryId(summary.id)
+
+        val categoriesById = categoryRepository.findByUserIsNullOrUserId(userId).associateBy { it.id }
+        periodSummaryCategoryRepository.saveAll(
             subCategories.mapNotNull { sc ->
                 categoriesById[sc.categoryId]?.let { category ->
-                    MonthlySummaryCategory(
-                        monthlySummary = summary,
+                    PeriodSummaryCategory(
+                        periodSummary = summary,
                         category = category,
                         totalAmount = sc.totalAmount,
                         expenseCount = sc.expenseCount,
@@ -70,21 +74,25 @@ class MonthlySummaryService(
             }
         )
 
-        return GenerateMonthlySummaryResult.Success(toResponse(summary, subCategories, categoriesById))
+        if (periodType == PeriodType.WEEK && periodEnd.isBefore(LocalDate.now(clock))) {
+            expenseRepository.deactivateByUserAndDateRange(userId, periodStart, periodEnd)
+        }
+
+        return GeneratePeriodSummaryResult.Success(toResponse(summary, subCategories, categoriesById))
     }
 
     @Transactional(readOnly = true)
-    fun find(userId: Long, month: LocalDate): FindMonthlySummaryResult {
-        val monthStart = month.withDayOfMonth(1)
-        val summary = monthlySummaryRepository.findByUserIdAndSummaryMonth(userId, monthStart)
-            ?: return FindMonthlySummaryResult.SummaryNotFound
-        val categoriesById = categoryRepository.findAll().associateBy { it.id }
-        val subCategories = monthlySummaryCategoryRepository.findAllWithCategoryBySummaryId(summary.id)
+    fun find(userId: Long, periodType: PeriodType, date: LocalDate): FindPeriodSummaryResult {
+        val periodStart = periodType.startOf(date)
+        val summary = periodSummaryRepository.findByUserIdAndPeriodTypeAndPeriodStart(userId, periodType, periodStart)
+            ?: return FindPeriodSummaryResult.SummaryNotFound
+        val categoriesById = categoryRepository.findByUserIsNullOrUserId(userId).associateBy { it.id }
+        val subCategories = periodSummaryCategoryRepository.findAllWithCategoryBySummaryId(summary.id)
             .map { subCategorySpend(it.category.id, it.totalAmount, it.expenseCount) }
-        return FindMonthlySummaryResult.Success(toResponse(summary, subCategories, categoriesById))
+        return FindPeriodSummaryResult.Success(toResponse(summary, subCategories, categoriesById))
     }
 
-    private fun toResponse(summary: MonthlySummary, subCategories: List<subCategorySpend>, categoriesById: Map<Long, Category>, ): MonthlySummaryResponse {
+    private fun toResponse(summary: PeriodSummary, subCategories: List<subCategorySpend>, categoriesById: Map<Long, Category>, ): PeriodSummaryResponse {
         val categories = subCategories
             .mapNotNull { subCategory -> categoriesById[subCategory.categoryId]?.let { it to subCategory } }
             .groupBy { (category, _) -> rootOf(category, categoriesById) }
@@ -103,10 +111,11 @@ class MonthlySummaryService(
             }
             .sortedByDescending { it.totalAmount }
 
-        return MonthlySummaryResponse(
+        return PeriodSummaryResponse(
             summaryId = summary.id,
             userId = summary.user.id,
-            summaryMonth = summary.summaryMonth,
+            periodType = summary.periodType,
+            periodStart = summary.periodStart,
             totalIncome = summary.totalIncome,
             totalSpent = summary.totalSpent,
             categories = categories,

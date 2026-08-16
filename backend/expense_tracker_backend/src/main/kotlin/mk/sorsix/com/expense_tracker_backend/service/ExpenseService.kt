@@ -64,6 +64,10 @@ class ExpenseService(
             return UpdateExpenseResult.NotOwner
         }
 
+        if (!existing.active) {
+            return UpdateExpenseResult.ExpenseLocked
+        }
+
         val foundCategory = categoryService.findCategoryById(request.categoryId)
             ?: return UpdateExpenseResult.CategoryNotFound
 
@@ -90,6 +94,10 @@ class ExpenseService(
 
         if (existing.user.id != user.id) {
             return DeleteExpenseResult.NotOwner
+        }
+
+        if (!existing.active) {
+            return DeleteExpenseResult.ExpenseLocked
         }
 
         expenseRepository.delete(existing)
