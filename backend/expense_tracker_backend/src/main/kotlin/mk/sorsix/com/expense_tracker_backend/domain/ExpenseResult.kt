@@ -12,10 +12,12 @@ sealed class UpdateExpenseResult {
     object ExpenseNotFound : UpdateExpenseResult()
     object CategoryNotFound : UpdateExpenseResult()
     object NotOwner : UpdateExpenseResult()
+    object ExpenseLocked : UpdateExpenseResult()
 }
 
 sealed class DeleteExpenseResult {
     object Success : DeleteExpenseResult()
     object ExpenseNotFound : DeleteExpenseResult()
     object NotOwner : DeleteExpenseResult()
+    object ExpenseLocked : DeleteExpenseResult()
 }

@@ -1,13 +1,15 @@
 package mk.sorsix.com.expense_tracker_backend.domain.dto
 
+import mk.sorsix.com.expense_tracker_backend.domain.PeriodType
 import java.math.BigDecimal
 import java.time.LocalDate
 
 
-data class MonthlySummaryResponse(
+data class PeriodSummaryResponse(
     val summaryId: Long,
     val userId: Long,
-    val summaryMonth: LocalDate,
+    val periodType: PeriodType,
+    val periodStart: LocalDate,
     val totalIncome: BigDecimal?,
     val totalSpent: BigDecimal,
     val categories: List<CategorySummaryResponse> = emptyList(),
@@ -28,8 +30,9 @@ data class SubCategorySummaryResponse(
     val expenseCount: Int,
 )
 
-data class MonthlySummaryRunReport(
-    val month: LocalDate,
+data class PeriodSummaryRunReport(
+    val periodType: PeriodType,
+    val periodStart: LocalDate,
     val usersProcessed: Int,
     val succeeded: Int,
     val failed: Int,

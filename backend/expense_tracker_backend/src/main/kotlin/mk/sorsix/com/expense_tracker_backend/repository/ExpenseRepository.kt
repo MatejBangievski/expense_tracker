@@ -5,6 +5,7 @@ import mk.sorsix.com.expense_tracker_backend.domain.Expense
 import org.springframework.data.jpa.repository.EntityGraph
 import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor
+import org.springframework.data.jpa.repository.Modifying
 import org.springframework.data.jpa.repository.Query
 import org.springframework.data.repository.query.Param
 import java.math.BigDecimal
@@ -14,6 +15,8 @@ interface ExpenseRepository : JpaRepository<Expense, Long>, JpaSpecificationExec
     @EntityGraph(attributePaths = ["category", "user"])
     override fun findAll(spec: Specification<Expense>): List<Expense>
     fun existsByCategoryId(categoryId: Long): Boolean
+
+    @EntityGraph(attributePaths = ["category"])
     fun findByUserIdAndExpenseDateBetween(userId: Long, periodStart: LocalDate, periodEnd: LocalDate): List<Expense>
 
     @Query(
@@ -37,4 +40,15 @@ interface ExpenseRepository : JpaRepository<Expense, Long>, JpaSpecificationExec
         @Param("planId") planId: Long,
         @Param("date") date: LocalDate
     ): BigDecimal
+
+    @Modifying(flushAutomatically = true, clearAutomatically = false)
+    @Query("""
+        UPDATE Expense e SET e.active = false
+        WHERE e.user.id = :userId AND e.expenseDate BETWEEN :start AND :end
+    """)
+    fun deactivateByUserAndDateRange(
+        @Param("userId") userId: Long,
+        @Param("start") start: LocalDate,
+        @Param("end") end: LocalDate,
+    ): Int
 }

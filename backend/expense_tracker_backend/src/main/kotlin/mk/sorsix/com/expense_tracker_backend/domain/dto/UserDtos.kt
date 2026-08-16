@@ -14,3 +14,19 @@ data class UserResponse(
     val monthlySalary: BigDecimal,
     val totalSaved: BigDecimal
 )
+
+data class SetApiKeyRequest(
+    val apiKey: String,
+)
+
+data class ApiKeyResponse(
+    val apiKey: String?,
+)
+
+data class ValidateApiKeyRequest(
+    val apiKey: String,
+)
+
+data class ValidateApiKeyResponse(
+    val valid: Boolean,
+)

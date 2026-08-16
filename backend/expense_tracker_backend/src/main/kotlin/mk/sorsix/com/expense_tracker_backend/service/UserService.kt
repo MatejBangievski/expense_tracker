@@ -1,6 +1,7 @@
 package mk.sorsix.com.expense_tracker_backend.service
 
 
+import mk.sorsix.com.expense_tracker_backend.config.UserChatClientProvider
 import mk.sorsix.com.expense_tracker_backend.domain.*
 import mk.sorsix.com.expense_tracker_backend.domain.dto.UpdateUserRequest
 import mk.sorsix.com.expense_tracker_backend.domain.dto.UpdateUserResult
@@ -10,7 +11,9 @@ import org.springframework.stereotype.Service
 
 @Service
 class UserService(
-    private val userRepository: UserRepository
+    private val userRepository: UserRepository,
+    private val encryptionService: EncryptionService,
+    private val userChatClientProvider: UserChatClientProvider,
 ) {
 
     fun getProfile(user: User): UserResponse = user.toResponse()
@@ -25,6 +28,17 @@ class UserService(
 
         return UpdateUserResult.Success(updated.toResponse())
     }
+
+    fun setApiKey(user: User, apiKey: String): String? = getApiKey(userRepository.save(user.copy(aiApiKey = encryptionService.encrypt(apiKey))), masked = true)
+
+    fun getApiKey(user: User, masked: Boolean): String? {
+        val plain = user.aiApiKey?.let(encryptionService::decrypt) ?: return null
+        return if (masked) "…${plain.takeLast(4)}" else plain
+    }
+
+    fun clearApiKey(user: User) = userRepository.save(user.copy(aiApiKey = null))
+
+    fun validateApiKey(apiKey: String): Boolean = userChatClientProvider.validate(apiKey)
 
     private fun User.toResponse() = UserResponse(
         id = id,

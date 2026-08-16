@@ -30,5 +30,5 @@ data class Expense(
     val description: String? = null,
     val amount: BigDecimal = BigDecimal.ZERO,
     val expenseDate: LocalDate = LocalDate.now(),
-
+    val active: Boolean = true,
 )
