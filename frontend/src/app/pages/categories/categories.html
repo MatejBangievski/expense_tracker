@@ -1,0 +1,42 @@
+<div class="container py-4">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h4 mb-0">Categories</h1>
+    <a routerLink="/categories/create" class="btn btn-primary btn-sm">Add category</a>
+  </div>
+
+  @if (categories().loading) {
+    <p>Loading...</p>
+  } @else if (categories().data; as categoryList) {
+    <table class="table">
+      <thead>
+      <tr>
+        <th>Name</th>
+        <th>Parent</th>
+        <th>Type</th>
+        <th></th>
+      </tr>
+      </thead>
+      <tbody>
+        @for (category of categoryList; track category.id) {
+          <tr>
+            <td>{{ category.name }}</td>
+            <td>{{ category.parentCategoryName }}</td>
+            <td>
+              @if (category.default) {
+                <span class="badge text-bg-secondary">Default</span>
+              } @else {
+                <span class="badge text-bg-primary">Custom</span>
+              }
+            </td>
+            <td class="text-end">
+              @if (!category.default) {
+                <a [routerLink]="['/categories/edit', category.id]" class="btn btn-outline-secondary btn-sm">Edit</a>
+                <button type="button" class="btn btn-outline-danger btn-sm" (click)="onDelete(category.id)">Delete</button>
+              }
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  }
+</div>

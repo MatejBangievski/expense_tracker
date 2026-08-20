@@ -2,6 +2,7 @@ package mk.sorsix.com.expense_tracker_backend.api
 
 import mk.sorsix.com.expense_tracker_backend.domain.CreateExpenseResult
 import mk.sorsix.com.expense_tracker_backend.domain.DeleteExpenseResult
+import mk.sorsix.com.expense_tracker_backend.domain.FindExpenseResult
 
 import mk.sorsix.com.expense_tracker_backend.domain.UpdateExpenseResult
 import mk.sorsix.com.expense_tracker_backend.domain.dto.CreateExpenseRequest
@@ -43,6 +44,18 @@ class ExpenseController(
         val filter = ExpenseFilter(categoryName, periodStart, periodEnd, search)
         return expenseService.listExpenses(currentUserProvider.resolve(userDetails), filter)
     }
+    @GetMapping("/{id}")
+    fun getById(
+        @AuthenticationPrincipal userDetails: UserDetails,
+        @PathVariable id: Long
+    ): ResponseEntity<*> =
+        when (val result = expenseService.findById(currentUserProvider.resolve(userDetails), id)) {
+            is FindExpenseResult.Success -> ResponseEntity.ok(result.expense)
+            is FindExpenseResult.ExpenseNotFound -> ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(mapOf("error" to "Expense not found"))
+            is FindExpenseResult.NotOwner -> ResponseEntity.status(HttpStatus.FORBIDDEN)
+                .body(mapOf("error" to "You do not own this expense"))
+        }
 
     @PostMapping
     fun createExpense(
