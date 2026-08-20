@@ -1,0 +1,55 @@
+<form [formRoot]="expenseForm">
+  <label for="categoryId">
+    Category:
+    <select id="categoryId" [formField]="expenseForm.categoryId">
+      <option value="0" disabled>Select a category</option>
+      @for (category of categories(); track category.id) {
+        <option [value]="category.id">{{ category.name }}</option>
+      }
+    </select>
+    @if (expenseForm.categoryId().dirty() && expenseForm.categoryId().invalid()) {
+      <div class="errors">
+        @for (error of expenseForm.categoryId().errors(); track error.kind) {
+          <p>{{ error.message }}</p>
+        }
+      </div>
+    }
+  </label>
+
+  <label
+  >Amount:
+    <input type="number" step="0.01" [formField]="expenseForm.amount" />
+    @if (expenseForm.amount().dirty() && expenseForm.amount().invalid()) {
+      <div class="errors">
+        @for (error of expenseForm.amount().errors(); track error.kind) {
+          <p>{{ error.message }}</p>
+        }
+      </div>
+    }
+  </label>
+
+  <label
+  >Date:
+    <input type="date" [formField]="expenseForm.expenseDate" />
+    @if (expenseForm.expenseDate().dirty() && expenseForm.expenseDate().invalid()) {
+      <div class="errors">
+        @for (error of expenseForm.expenseDate().errors(); track error.kind) {
+          <p>{{ error.message }}</p>
+        }
+      </div>
+    }
+  </label>
+
+  <label
+  >Description:
+    <input type="text" [formField]="expenseForm.description" />
+  </label>
+
+  <button type="submit" [disabled]="!expenseForm().valid() || expenseForm().submitting()">
+    @if (expenseForm().submitting()) {
+      Saving...
+    } @else {
+      Save
+    }
+  </button>
+</form>

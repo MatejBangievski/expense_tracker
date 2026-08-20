@@ -1,0 +1,20 @@
+<h1>Expenses</h1>
+<a routerLink="/expenses/create">Add expense</a>
+
+<input type="text" placeholder="Search expenses..." [formField]="searchForm.q" />
+
+@if (searchForm.q().value()) {
+  <ul class="expenses">
+    @for (expense of searchResult(); track expense.id) {
+      <app-expense-row [expense]="expense" (deleted)="onDelete($event)" />
+    }
+  </ul>
+} @else if (expenses().loading) {
+  <p>Loading...</p>
+} @else {
+  <ul class="expenses">
+    @for (expense of expenses().data; track expense.id) {
+      <app-expense-row [expense]="expense" (deleted)="onDelete($event)" />
+    }
+  </ul>
+}

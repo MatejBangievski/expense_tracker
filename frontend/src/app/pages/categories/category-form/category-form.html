@@ -1,0 +1,30 @@
+<form [formRoot]="categoryForm">
+  <label
+  >Name:
+    <input type="text" [formField]="categoryForm.name" />
+    @if (categoryForm.name().dirty() && categoryForm.name().invalid()) {
+      <span>This input is not valid</span>
+      <div class="errors">
+        @for (error of categoryForm.name().errors(); track error.kind) {
+          <p>{{ error.message }}</p>
+        }
+      </div>
+    }
+  </label>
+  <label for="parentCategoryId">
+    Parent category:
+    <select id="parentCategoryId" [formField]="categoryForm.parentCategoryId">
+      <option [value]="0">None</option>
+      @for (category of categories(); track category.id) {
+        <option [value]="category.id">{{ category.name }}</option>
+      }
+    </select>
+  </label>
+  <button type="submit" [disabled]="!categoryForm().valid() || categoryForm().submitting()">
+    @if (categoryForm().submitting()) {
+      Saving...
+    } @else {
+      Save
+    }
+  </button>
+</form>
