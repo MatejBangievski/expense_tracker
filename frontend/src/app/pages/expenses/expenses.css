@@ -1,17 +1,25 @@
-
 .expenses {
   list-style: none;
   padding: 0;
 }
-
-.expenses li {
+.filters {
   display: flex;
-  gap: 1rem;
-  align-items: center;
-  padding: 0.5rem 0;
-  border-bottom: 1px solid #e5e7eb;
+  gap: 0.5rem;
+  margin: 1rem 0;
 }
-
-.amount {
-  margin-left: auto;
+.date-range-field {
+  width: 250px;
+}
+.date-range-field input {
+  width: 100%;
+}
+.date-range-field .mat-date-range-input-container {
+  display: flex;
+}
+.hidden-date-range {
+  position: absolute;
+  width: 0;
+  height: 0;
+  overflow: hidden;
+  opacity: 0;
 }

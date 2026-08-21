@@ -1,11 +1,35 @@
 <h1>Expenses</h1>
 <a routerLink="/expenses/create">Add expense</a>
 
-<input type="text" placeholder="Search expenses..." [formField]="searchForm.q" />
+<div class="filters">
+  <input type="text" placeholder="Search expenses..." [formField]="filterForm.q" />
 
-@if (searchForm.q().value()) {
+  <select [formField]="filterForm.categoryName">
+    <option value="">All categories</option>
+    @for (category of categories(); track category.id) {
+      <option [value]="category.name">{{ category.name }}</option>
+    }
+  </select>
+
+  <mat-form-field>
+    <input matInput [value]="dateRangeLabel()" placeholder="Select date range" readonly (click)="picker.open()" />
+
+    <mat-datepicker-toggle matIconSuffix [for]="picker"></mat-datepicker-toggle>
+
+    <mat-date-range-input [rangePicker]="picker" class="hidden-date-range">
+      <input matStartDate placeholder="Start date" [value]="startDateValue()" (dateChange)="onStartDateChange($event)" />
+      <input matEndDate placeholder="End date" [value]="endDateValue()" (dateChange)="onEndDateChange($event)" />
+    </mat-date-range-input>
+
+    <mat-date-range-picker #picker></mat-date-range-picker>
+  </mat-form-field>
+
+  <button type="button" (click)="resetFilters()">Reset filters</button>
+</div>
+
+@if (isFiltering()) {
   <ul class="expenses">
-    @for (expense of searchResult(); track expense.id) {
+    @for (expense of filterResult(); track expense.id) {
       <app-expense-row [expense]="expense" (deleted)="onDelete($event)" />
     }
   </ul>
