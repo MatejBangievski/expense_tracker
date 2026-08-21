@@ -4,6 +4,7 @@ package mk.sorsix.com.expense_tracker_backend.service
 import mk.sorsix.com.expense_tracker_backend.domain.CreateExpenseResult
 import mk.sorsix.com.expense_tracker_backend.domain.DeleteExpenseResult
 import mk.sorsix.com.expense_tracker_backend.domain.Expense
+import mk.sorsix.com.expense_tracker_backend.domain.FindExpenseResult
 import mk.sorsix.com.expense_tracker_backend.domain.UpdateExpenseResult
 import mk.sorsix.com.expense_tracker_backend.domain.User
 import mk.sorsix.com.expense_tracker_backend.domain.dto.CreateExpenseRequest
@@ -22,6 +23,17 @@ class ExpenseService(
 ) {
 
     fun findExpenseById(expenseId: Long): Expense? = expenseRepository.findByIdOrNull(expenseId)
+
+    fun findById(user: User, id: Long): FindExpenseResult {
+        val expense = findExpenseById(id)
+            ?: return FindExpenseResult.ExpenseNotFound
+
+        if (expense.user.id != user.id) {
+            return FindExpenseResult.NotOwner
+        }
+
+        return FindExpenseResult.Success(expense.toResponse())
+    }
 
     fun listExpenses(user: User, filter: ExpenseFilter): List<ExpenseResponse> {
         var specification = ExpenseSpecifications.belongsToUser(user.id)

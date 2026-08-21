@@ -21,3 +21,8 @@ sealed class DeleteExpenseResult {
     object NotOwner : DeleteExpenseResult()
     object ExpenseLocked : DeleteExpenseResult()
 }
+sealed class FindExpenseResult {
+    data class Success(val expense: ExpenseResponse) : FindExpenseResult()
+    object ExpenseNotFound : FindExpenseResult()
+    object NotOwner : FindExpenseResult()
+}
