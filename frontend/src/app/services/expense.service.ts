@@ -6,14 +6,16 @@ import { Expense, ExpenseFilter } from '../models/expense';
 
 @Service()
 export class ExpenseService {
+
   http = inject(HttpClient);
 
   getExpenses(filter: ExpenseFilter = {}): Observable<Expense[]> {
-    return this.http.get<Expense[]>(`/api/expenses`, { params: { ...filter } });
+    return this.http.get<Expense[]>(`/api/expenses`, {  params: this.buildParams(filter), });
   }
 
   getExpensesResult(filter: ExpenseFilter = {}): Observable<Result<Expense[]>> {
-    return this.http.get<Expense[]>(`/api/expenses`, { params: { ...filter } }).pipe(
+    return this.http.get<Expense[]>(`/api/expenses`, { params: this.buildParams(filter),
+    }).pipe(
       map((result) => ({ data: result, loading: false })),
     );
   }
@@ -32,5 +34,27 @@ export class ExpenseService {
 
   deleteExpense(id: number) {
     return this.http.delete(`/api/expenses/${id}`);
+  }
+
+  private buildParams(filter: ExpenseFilter = {}): Record<string, string> {
+    const params: Record<string, string> = {};
+
+    if (filter.search) {
+      params['search'] = filter.search;
+    }
+
+    if (filter.categoryName) {
+      params['categoryName'] = filter.categoryName;
+    }
+
+    if (filter.periodStart) {
+      params['periodStart'] = filter.periodStart;
+    }
+
+    if (filter.periodEnd) {
+      params['periodEnd'] = filter.periodEnd;
+    }
+
+    return params;
   }
 }
