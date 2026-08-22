@@ -9,6 +9,7 @@ import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.security.core.annotation.AuthenticationPrincipal
 import org.springframework.security.core.userdetails.UserDetails
+import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
@@ -20,6 +21,13 @@ class MonthlySavingController(
     private val monthlySavingService: MonthlySavingService,
     private val currentUserProvider: CurrentUserProvider,
 ) {
+
+    @GetMapping
+    fun current(@AuthenticationPrincipal userDetails: UserDetails): ResponseEntity<*> =
+        monthlySavingService.getCurrentPlan(currentUserProvider.resolve(userDetails))
+            ?.let { ResponseEntity.ok(it) }
+            ?: ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(mapOf("error" to "No saving plan for the upcoming month"))
 
     @PostMapping
     fun createManual(

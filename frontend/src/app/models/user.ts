@@ -10,3 +10,12 @@ export interface UpdateUserRequest {
   displayName: string;
   monthlySalary: number;
 }
+
+export interface ApiKeyResponse {
+  apiKey: string | null;
+}
+
+export interface ChangePasswordRequest {
+  currentPassword: string;
+  newPassword: string;
+}

@@ -1,0 +1,8 @@
+.card {
+  border-radius: 0.75rem;
+  border: 1px solid #e5e7eb;
+}
+
+.ai-card {
+  max-width: 24rem;
+}

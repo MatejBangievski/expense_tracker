@@ -1,0 +1,94 @@
+@if (plan().loading) {
+  <p class="text-center mt-5">Loading…</p>
+} @else if (plan().data; as savingPlan) {
+  <div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <h1 class="h4 mb-0">Saving plan · {{ savingPlan.savingMonth }}</h1>
+      <a class="btn btn-outline-secondary btn-sm" routerLink="/saving-plan/edit">Edit plan</a>
+    </div>
+
+    <div class="row g-3 mb-4">
+      <div class="col-md-4">
+        <div class="card p-3">
+          <p class="text-secondary small mb-1">Budget</p>
+          <p class="h5 mb-0">{{ savingPlan.totalBudgetLimit | currency }}</p>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="card p-3">
+          <p class="text-secondary small mb-1">Spent this month</p>
+          <p class="h5 mb-0">{{ savingPlan.totalSpent | currency }}</p>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="card p-3">
+          <p class="text-secondary small mb-1">Projected saved</p>
+          <p class="h5 mb-0">{{ savingPlan.totalSaved | currency }}</p>
+        </div>
+      </div>
+    </div>
+
+    @if (savingPlan.recommendationMessage) {
+      <div class="alert alert-info">{{ savingPlan.recommendationMessage }}</div>
+    }
+
+    <h2 class="h6 text-secondary mb-2">Categories</h2>
+    <div class="row g-3">
+      @for (limit of savingPlan.categoryLimits; track limit.categoryId) {
+        <div class="col-md-4">
+          <div class="card p-3 h-100">
+            <p class="h6 mb-2">{{ limit.categoryName }}</p>
+            <p class="text-secondary small mb-1">Spent this month</p>
+            <p class="mb-2">{{ (limit.actualSpent ?? 0) | currency }}</p>
+            <p class="text-secondary small mb-1">Limit</p>
+            <p class="mb-0">{{ limit.monthlyLimit | currency }}</p>
+          </div>
+        </div>
+      } @empty {
+        <p class="text-secondary">No category limits in this plan.</p>
+      }
+    </div>
+  </div>
+} @else {
+  <div class="container py-4">
+    <h1 class="h4 mb-3">Create a saving plan</h1>
+    <p class="text-secondary">You don't have a plan for next month yet. Choose how to create one.</p>
+
+    <div class="d-flex gap-2 mb-3">
+      <a class="btn btn-primary" routerLink="/saving-plan/create">Create manually</a>
+      <button type="button" class="btn btn-outline-primary" [disabled]="!hasApiKey()" (click)="showAi.set(true)">
+        Create with AI
+      </button>
+    </div>
+
+    @if (!hasApiKey()) {
+      <p class="text-secondary small">
+        AI generation needs a Gemini API key. <a routerLink="/dashboard">Add your API key from your dashboard</a>.
+      </p>
+    }
+
+    @if (hasApiKey() && showAi()) {
+      <div class="card p-3 ai-card">
+        <label for="aiBudget" class="form-label">Max budget</label>
+        <input
+          id="aiBudget"
+          type="number"
+          min="0"
+          class="form-control mb-2"
+          [value]="aiBudget()"
+          (input)="aiBudget.set($any($event.target).valueAsNumber)"
+        />
+        @if (aiError()) {
+          <div class="alert alert-danger py-2">{{ aiError() }}</div>
+        }
+        <button type="button" class="btn btn-primary" (click)="generateAi()" [disabled]="aiLoading()">
+          @if (aiLoading()) {
+            Generating…
+          } @else {
+            Generate
+          }
+        </button>
+      </div>
+    }
+  </div>
+}

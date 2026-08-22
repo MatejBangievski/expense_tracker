@@ -100,4 +100,37 @@ class UserControllerTest : AbstractIntegrationTest() {
             jsonPath("$.valid") { value(false) }
         }
     }
+
+    @Test
+    fun `changing password with the correct current password lets the user log in with the new one`() {
+        val user = mockMvc.registerAndLogin(objectMapper)
+
+        mockMvc.put("/api/users/me/password") {
+            contentType = MediaType.APPLICATION_JSON
+            header("Authorization", "Bearer ${user.accessToken}")
+            content = """{"currentPassword":"pass123","newPassword":"newpass456"}"""
+        }.andExpect { status { isOk() } }
+
+        mockMvc.post("/api/auth/login") {
+            contentType = MediaType.APPLICATION_JSON
+            content = """{"email":"${user.email}","password":"newpass456"}"""
+        }.andExpect {
+            status { isOk() }
+            jsonPath("$.accessToken") { exists() }
+        }
+    }
+
+    @Test
+    fun `changing password with a wrong current password returns 400`() {
+        val user = mockMvc.registerAndLogin(objectMapper)
+
+        mockMvc.put("/api/users/me/password") {
+            contentType = MediaType.APPLICATION_JSON
+            header("Authorization", "Bearer ${user.accessToken}")
+            content = """{"currentPassword":"not-my-password","newPassword":"newpass456"}"""
+        }.andExpect {
+            status { isBadRequest() }
+            jsonPath("$.error") { exists() }
+        }
+    }
 }

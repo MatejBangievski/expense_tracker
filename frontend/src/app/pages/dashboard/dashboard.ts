@@ -1,6 +1,7 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
-import { FormField, FormRoot, form, required, min } from '@angular/forms/signals';
+import { FormField, FormRoot, form, required, min, minLength } from '@angular/forms/signals';
+import { HttpErrorResponse } from '@angular/common/http';
 import { ReplaySubject, mergeMap } from 'rxjs';
 import { AuthService } from '../../services/auth.service';
 import { UserService } from '../../services/user.service';
@@ -10,6 +11,11 @@ import { CurrencyPipe } from '@angular/common';
 interface ProfileForm {
   displayName: string;
   monthlySalary: number;
+}
+
+interface PasswordForm {
+  currentPassword: string;
+  newPassword: string;
 }
 
 @Component({
@@ -51,8 +57,44 @@ export class Dashboard implements OnInit {
     },
   });
 
+  passwordSuccess = signal('');
+  passwordError = signal('');
+  passwordModel = signal<PasswordForm>({ currentPassword: '', newPassword: '' });
+
+  passwordForm = form(
+    this.passwordModel,
+    (schemaPath) => {
+      required(schemaPath.currentPassword, { message: 'Current password is required' });
+      required(schemaPath.newPassword, { message: 'New password is required' });
+      minLength(schemaPath.newPassword, 6, { message: 'New password must be at least 6 characters' });
+    },
+    {
+      submission: {
+        action: async (passwordForm) => {
+          this.passwordError.set('');
+          this.passwordSuccess.set('');
+          this.userService.changePassword(passwordForm().value()).subscribe({
+            next: () => {
+              this.passwordSuccess.set('Password updated');
+              passwordForm().reset({ currentPassword: '', newPassword: '' });
+            },
+            error: (err: HttpErrorResponse) =>
+              this.passwordError.set(
+                err.status === 400 ? 'Current password is incorrect' : 'Could not change password',
+              ),
+          });
+        },
+      },
+    },
+  );
+
+  apiKeyMasked = signal<string | null>(null);
+  apiKeyInput = signal('');
+  apiKeyMessage = signal('');
+
   ngOnInit(): void {
     this.reload$.next();
+    this.loadApiKey();
   }
 
   onEdit(currentUser: { displayName: string; monthlySalary: number }) {
@@ -61,7 +103,35 @@ export class Dashboard implements OnInit {
       monthlySalary: currentUser.monthlySalary,
     });
     this.successMessage.set('');
+    this.passwordForm().reset({ currentPassword: '', newPassword: '' });
+    this.passwordSuccess.set('');
+    this.passwordError.set('');
+    this.apiKeyInput.set('');
+    this.apiKeyMessage.set('');
     this.editing.set(true);
+  }
+
+  loadApiKey(): void {
+    this.userService.getApiKey().subscribe((key) => this.apiKeyMasked.set(key));
+  }
+
+  saveApiKey(): void {
+    const key = this.apiKeyInput().trim();
+    if (!key) {
+      return;
+    }
+    this.userService.setApiKey(key).subscribe((response) => {
+      this.apiKeyMasked.set(response.apiKey);
+      this.apiKeyInput.set('');
+      this.apiKeyMessage.set('API key saved');
+    });
+  }
+
+  removeApiKey(): void {
+    this.userService.clearApiKey().subscribe(() => {
+      this.apiKeyMasked.set(null);
+      this.apiKeyMessage.set('API key removed');
+    });
   }
 
   onCancelEdit() {

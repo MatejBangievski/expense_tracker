@@ -84,6 +84,13 @@ class MonthlySavingService(
         )
     }
 
+    @Transactional(readOnly = true)
+    fun getCurrentPlan(user: User): MonthlySavingPlanResponse? {
+        val savingMonth = LocalDate.now(clock).withDayOfMonth(1).plusMonths(1)
+        val saving = monthlySavingRepository.findByUserIdAndSavingMonth(user.id, savingMonth) ?: return null
+        return saving.toResponse(budgetRepository.findByMonthlySavingId(saving.id))
+    }
+
     private fun persistPlan(user: User, savingMonth: LocalDate, nextPeriodBudgetLimit: BigDecimal, totalIncome: BigDecimal?, summary: PeriodSummaryResponse, recommendationMessage: String?, categoryLimits: List<CategoryBudgetSuggestion>): GenerateMonthlySavingPlanResult {
         // Mozhebi nekoja bolje logika ovde
         val totalSaved = summary.totalSpent.subtract(nextPeriodBudgetLimit).max(BigDecimal.ZERO)
@@ -102,7 +109,7 @@ class MonthlySavingService(
         val limitsByCategory = categoryLimits.associateBy { it.categoryName }
         val actualsByCategory = summary.categories.associateBy { it.categoryName }
 
-        //        val budgets = allCategoryNames.mapNotNull { categoryName ->
+//        val budgets = allCategoryNames.mapNotNull { categoryName ->
 //            val category = categoryRepository.findByNameIgnoreCase(categoryName)
 //            if (category == null) {
 //                null
