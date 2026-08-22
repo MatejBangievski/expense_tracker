@@ -33,6 +33,12 @@
         }
       </div>
 
+      <div class="mb-3">
+        <label for="apiKey" class="form-label">Gemini API key <span class="text-secondary small">(optional)</span></label>
+        <input id="apiKey" type="password" class="form-control" [formField]="registerForm.apiKey" />
+        <div class="text-secondary small">Add it now to enable AI features, or set it later from your dashboard.</div>
+      </div>
+
       @if (errorMessage()) {
         <div class="alert alert-danger py-2">{{ errorMessage() }}</div>
       }

@@ -19,6 +19,11 @@ data class SetApiKeyRequest(
     val apiKey: String,
 )
 
+data class ChangePasswordRequest(
+    val currentPassword: String,
+    val newPassword: String,
+)
+
 data class ApiKeyResponse(
     val apiKey: String?,
 )

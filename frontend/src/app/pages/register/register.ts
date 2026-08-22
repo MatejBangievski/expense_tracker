@@ -2,11 +2,13 @@ import { Component, inject, signal } from '@angular/core';
 import { FormField, FormRoot, form, minLength, required } from '@angular/forms/signals';
 import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
+import { UserService } from '../../services/user.service';
 
 interface RegisterForm {
   displayName: string;
   email: string;
   password: string;
+  apiKey: string;
 }
 
 @Component({
@@ -17,11 +19,12 @@ interface RegisterForm {
 })
 export class Register {
   authService = inject(AuthService);
+  userService = inject(UserService);
   router = inject(Router);
 
   errorMessage = signal('');
 
-  registerModel = signal<RegisterForm>({ displayName: '', email: '', password: '' });
+  registerModel = signal<RegisterForm>({ displayName: '', email: '', password: '', apiKey: '' });
 
   registerForm = form(this.registerModel, (schemaPath) => {
     required(schemaPath.displayName, { message: 'Name is required' });
@@ -32,9 +35,20 @@ export class Register {
     submission: {
       action: async (registerForm) => {
         this.errorMessage.set('');
-        this.authService.register(registerForm().value()).subscribe({
-          next: () => this.router.navigate(['/dashboard']),
-          error: () => this.errorMessage.set('Email is already in use')
+        const { apiKey, ...registerRequest } = registerForm().value();
+        this.authService.register(registerRequest).subscribe({
+          next: () => {
+            const key = apiKey.trim();
+            if (key) {
+              this.userService.setApiKey(key).subscribe({
+                next: () => this.router.navigate(['/dashboard']),
+                error: () => this.router.navigate(['/dashboard']),
+              });
+            } else {
+              this.router.navigate(['/dashboard']);
+            }
+          },
+          error: () => this.errorMessage.set('Email is already in use'),
         });
       }
     }

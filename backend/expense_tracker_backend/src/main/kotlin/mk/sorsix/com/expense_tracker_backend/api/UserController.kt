@@ -1,6 +1,8 @@
 package mk.sorsix.com.expense_tracker_backend.api
 
 import mk.sorsix.com.expense_tracker_backend.domain.dto.ApiKeyResponse
+import mk.sorsix.com.expense_tracker_backend.domain.dto.ChangePasswordRequest
+import mk.sorsix.com.expense_tracker_backend.domain.dto.ChangePasswordResult
 import mk.sorsix.com.expense_tracker_backend.domain.dto.SetApiKeyRequest
 import mk.sorsix.com.expense_tracker_backend.domain.dto.UpdateUserRequest
 import mk.sorsix.com.expense_tracker_backend.domain.dto.UpdateUserResult
@@ -67,4 +69,15 @@ class UserController(
     @PostMapping("/api-key/validate")
     fun validateApiKey(@RequestBody request: ValidateApiKeyRequest): ResponseEntity<ValidateApiKeyResponse> =
         ResponseEntity.ok(ValidateApiKeyResponse(userService.validateApiKey(request.apiKey)))
+
+    @PutMapping("/password")
+    fun changePassword(
+        @AuthenticationPrincipal userDetails: UserDetails,
+        @RequestBody request: ChangePasswordRequest,
+    ): ResponseEntity<*> =
+        when (userService.changePassword(currentUserProvider.resolve(userDetails), request.currentPassword, request.newPassword)) {
+            is ChangePasswordResult.Success -> ResponseEntity.ok(mapOf("message" to "Password updated"))
+            is ChangePasswordResult.InvalidCurrentPassword -> ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(mapOf("error" to "Current password is incorrect"))
+        }
 }
