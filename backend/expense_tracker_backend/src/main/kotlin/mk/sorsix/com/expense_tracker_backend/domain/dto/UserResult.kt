@@ -4,3 +4,8 @@ sealed class UpdateUserResult {
     data class Success(val user: UserResponse) : UpdateUserResult()
     object UserNotFound : UpdateUserResult()
 }
+
+sealed class ChangePasswordResult {
+    object Success : ChangePasswordResult()
+    object InvalidCurrentPassword : ChangePasswordResult()
+}
