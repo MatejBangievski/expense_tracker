@@ -1,6 +1,7 @@
 package mk.sorsix.com.expense_tracker_backend.domain
 
 import mk.sorsix.com.expense_tracker_backend.domain.dto.DailyPlanResponse
+import java.math.BigDecimal
 
 sealed class CreateDailyPlanResult {
     data class Success(val dailyPlan: DailyPlanResponse) : CreateDailyPlanResult()
@@ -8,6 +9,7 @@ sealed class CreateDailyPlanResult {
     object NotOwner : CreateDailyPlanResult()
     object DateOutsideRange : CreateDailyPlanResult()
     object AlreadyExists : CreateDailyPlanResult()
+    data class OverBudgetWarning(val remainingBudget: BigDecimal) : CreateDailyPlanResult()
 }
 
 sealed class UpdateDailyPlanResult {

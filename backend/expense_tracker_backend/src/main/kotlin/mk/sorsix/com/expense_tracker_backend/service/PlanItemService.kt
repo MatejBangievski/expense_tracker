@@ -9,15 +9,18 @@ import mk.sorsix.com.expense_tracker_backend.domain.User
 import mk.sorsix.com.expense_tracker_backend.domain.dto.CreatePlanItemRequest
 import mk.sorsix.com.expense_tracker_backend.domain.dto.PlanItemResponse
 import mk.sorsix.com.expense_tracker_backend.domain.dto.UpdatePlanItemRequest
+import mk.sorsix.com.expense_tracker_backend.repository.DailyPlanRepository
 import mk.sorsix.com.expense_tracker_backend.repository.PlanItemRepository
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
+import java.math.BigDecimal
 
 @Service
 class PlanItemService(
     private val planItemRepository: PlanItemRepository,
     private val categoryService: CategoryService,
-    private val planService: PlanService
+    private val planService: PlanService,
+    private val dailyPlanRepository: DailyPlanRepository
 ) {
     fun findById(id: Long): PlanItem? {
         return planItemRepository.findByIdOrNull(id)
@@ -34,6 +37,30 @@ class PlanItemService(
 
         if (plan.user.id != user.id) {
             return CreatePlanItemResult.NotOwner
+        }
+
+        val currentTotal = planItemRepository.findByPlanId(planId)
+            .fold(BigDecimal.ZERO) { sum, item -> sum + item.plannedAmount }
+
+        val dailyPlan = dailyPlanRepository.findByPlanIdAndDate(planId, request.plannedDate)
+        if (dailyPlan != null) {
+            val currentDailyTotal = planItemRepository.findByPlanId(planId)
+                .filter { it.plannedDate == request.plannedDate }
+                .fold(BigDecimal.ZERO) { sum, item -> sum + item.plannedAmount }
+
+            val remainingDaily = dailyPlan.allocatedAmount - currentDailyTotal
+            if (request.plannedAmount > remainingDaily && request.confirmOverBudget != true) {
+                return CreatePlanItemResult.OverBudgetWarning(remainingDaily)
+            }
+        }
+
+        val remaining = plan.totalBudget - currentTotal
+        if (request.plannedAmount > remaining && request.confirmOverBudget != true) {
+            return CreatePlanItemResult.OverBudgetWarning(remaining)
+        }
+
+        if (request.plannedDate.isBefore(plan.startDate) || request.plannedDate.isAfter(plan.endDate)) {
+            return CreatePlanItemResult.DateOutsideRange
         }
 
         var category: Category? = null
@@ -68,6 +95,33 @@ class PlanItemService(
 
         if (existing.plan.user.id != user.id) {
             return UpdatePlanItemResult.NotOwner
+        }
+
+        if (request.plannedDate.isBefore(existing.plan.startDate) || request.plannedDate.isAfter(existing.plan.endDate)) {
+            return UpdatePlanItemResult.DateOutsideRange
+        }
+
+        val dailyPlan = dailyPlanRepository.findByPlanIdAndDate(existing.plan.id, request.plannedDate)
+        if (dailyPlan != null) {
+            val otherDailyTotal = planItemRepository.findByPlanId(existing.plan.id)
+                .filter { it.id != itemId && it.plannedDate == request.plannedDate }
+                .fold(BigDecimal.ZERO) { sum, item -> sum + item.plannedAmount }
+
+            val remainingDaily = dailyPlan.allocatedAmount - otherDailyTotal
+            if (request.plannedAmount > remainingDaily && request.confirmOverBudget != true) {
+                return UpdatePlanItemResult.OverBudgetWarning(remainingDaily)
+            }
+        }
+
+
+        val otherItemsTotal = planItemRepository.findByPlanId(existing.plan.id)
+            .filter { it.id != itemId }
+            .fold(BigDecimal.ZERO) { sum, item -> sum + item.plannedAmount }
+
+        val remaining = existing.plan.totalBudget - otherItemsTotal
+
+        if (request.plannedAmount > remaining && request.confirmOverBudget != true) {
+            return UpdatePlanItemResult.OverBudgetWarning(remaining)
         }
 
         var category: Category? = null

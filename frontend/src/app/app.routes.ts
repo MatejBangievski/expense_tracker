@@ -9,6 +9,9 @@ import { Expenses } from './pages/expenses/expenses';
 import { ExpenseForm } from './pages/expenses/expense-form/expense-form';
 import { SavingPlan } from './pages/saving-plan/saving-plan';
 import { SavingPlanForm } from './pages/saving-plan/saving-plan-form/saving-plan-form';
+import { Plans } from './pages/plans/plans';
+import { PlanForm } from './pages/plans/plan-form/plan-form';
+import { PlanDetail } from './pages/plans/plan-detail/plan-detail';
 
 
 export const routes: Routes = [
@@ -21,6 +24,10 @@ export const routes: Routes = [
   { path: 'expenses', component: Expenses, canActivate: [authGuard] },
   { path: 'expenses/create', component: ExpenseForm, canActivate: [authGuard] },
   { path: 'expenses/edit/:id', component: ExpenseForm, canActivate: [authGuard] },
+  { path: 'plans', component: Plans, canActivate: [authGuard] },
+  { path: 'plans/create', component: PlanForm, canActivate: [authGuard] },
+  { path: 'plans/edit/:id', component: PlanForm, canActivate: [authGuard] },
+  { path: 'plans/:id', component: PlanDetail, canActivate: [authGuard] },
   { path: 'saving-plan', component: SavingPlan, canActivate: [authGuard] },
   { path: 'saving-plan/create', component: SavingPlanForm, canActivate: [authGuard] },
   { path: 'saving-plan/edit', component: SavingPlanForm, data: { edit: true }, canActivate: [authGuard] },
