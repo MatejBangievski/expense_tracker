@@ -32,15 +32,6 @@ interface ExpenseRepository : JpaRepository<Expense, Long>, JpaSpecificationExec
         @Param("end") end: LocalDate
     ): BigDecimal
 
-    @Query("""
-    SELECT COALESCE(SUM(e.amount), 0) FROM Expense e
-    WHERE e.plan.id = :planId AND e.expenseDate = :date
-""")
-    fun sumAmountByPlanAndDate(
-        @Param("planId") planId: Long,
-        @Param("date") date: LocalDate
-    ): BigDecimal
-
     @Modifying(flushAutomatically = true, clearAutomatically = false)
     @Query("""
         UPDATE Expense e SET e.active = false

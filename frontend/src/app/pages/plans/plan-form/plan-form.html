@@ -1,0 +1,57 @@
+<form [formRoot]="planForm">
+  <label
+  >Name:
+    <input type="text" [formField]="planForm.name" />
+    @if (planForm.name().dirty() && planForm.name().invalid()) {
+      <div class="errors">
+        @for (error of planForm.name().errors(); track error.kind) {
+          <p>{{ error.message }}</p>
+        }
+      </div>
+    }
+  </label>
+
+  <label
+  >Start date:
+    <input type="date" [formField]="planForm.startDate" />
+    @if (planForm.startDate().dirty() && planForm.startDate().invalid()) {
+      <div class="errors">
+        @for (error of planForm.startDate().errors(); track error.kind) {
+          <p>{{ error.message }}</p>
+        }
+      </div>
+    }
+  </label>
+
+  <label
+  >End date:
+    <input type="date" [formField]="planForm.endDate" />
+    @if (planForm.endDate().dirty() && planForm.endDate().invalid()) {
+      <div class="errors">
+        @for (error of planForm.endDate().errors(); track error.kind) {
+          <p>{{ error.message }}</p>
+        }
+      </div>
+    }
+  </label>
+
+  <label
+  >Total budget:
+    <input type="number" step="0.01" [formField]="planForm.totalBudget" />
+    @if (planForm.totalBudget().dirty() && planForm.totalBudget().invalid()) {
+      <div class="errors">
+        @for (error of planForm.totalBudget().errors(); track error.kind) {
+          <p>{{ error.message }}</p>
+        }
+      </div>
+    }
+  </label>
+
+  <button type="submit" [disabled]="!planForm().valid() || planForm().submitting()">
+    @if (planForm().submitting()) {
+      Saving...
+    } @else {
+      Save
+    }
+  </button>
+</form>

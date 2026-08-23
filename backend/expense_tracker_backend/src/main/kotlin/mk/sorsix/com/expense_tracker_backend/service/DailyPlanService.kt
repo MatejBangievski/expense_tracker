@@ -9,14 +9,17 @@ import mk.sorsix.com.expense_tracker_backend.domain.dto.DailyPlanRequest
 import mk.sorsix.com.expense_tracker_backend.domain.dto.DailyPlanResponse
 import mk.sorsix.com.expense_tracker_backend.repository.DailyPlanRepository
 import mk.sorsix.com.expense_tracker_backend.repository.ExpenseRepository
+import mk.sorsix.com.expense_tracker_backend.repository.PlanItemRepository
+import mk.sorsix.com.expense_tracker_backend.repository.PlanRepository
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
+import java.math.BigDecimal
 
 @Service
 class DailyPlanService(
     private val dailyPlanRepository: DailyPlanRepository,
     private val planService: PlanService,
-    private val expenseRepository: ExpenseRepository
+    private val planItemRepository: PlanItemRepository,
 ) {
 
     fun listDailyPlans(user: User, planId: Long): List<DailyPlanResponse>? {
@@ -43,6 +46,14 @@ class DailyPlanService(
         val existingPlan = dailyPlanRepository.findByPlanIdAndDate(planId, request.date)
         if (existingPlan != null) {
             return CreateDailyPlanResult.AlreadyExists
+        }
+
+        val currentAllocated = dailyPlanRepository.findByPlanId(planId)
+            .fold(BigDecimal.ZERO) { sum, dp -> sum + dp.allocatedAmount }
+
+        val remaining = plan.totalBudget - currentAllocated
+        if (request.allocatedAmount > remaining && request.confirmOverBudget != true) {
+            return CreateDailyPlanResult.OverBudgetWarning(remaining)
         }
 
         val dailyPlan = dailyPlanRepository.save(
@@ -80,13 +91,17 @@ class DailyPlanService(
 
 
     private fun DailyPlan.toResponse(): DailyPlanResponse {
-        val spent = expenseRepository.sumAmountByPlanAndDate(plan.id, date)
+        val plannedAmount = planItemRepository.sumPlannedAmountByPlanAndDate(
+            plan.id,
+            date
+        )
+
         return DailyPlanResponse(
             id = id,
             planId = plan.id,
             date = date,
             allocatedAmount = allocatedAmount,
-            actualSpent = spent
+            actualSpent = plannedAmount
         )
     }
 }

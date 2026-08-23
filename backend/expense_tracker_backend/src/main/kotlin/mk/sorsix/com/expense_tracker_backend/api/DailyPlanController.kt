@@ -47,6 +47,9 @@ class DailyPlanController(
 
             is CreateDailyPlanResult.AlreadyExists -> ResponseEntity.status(HttpStatus.CONFLICT)
                 .body(mapOf("error" to "An allocation already exists for this date"))
+
+            is CreateDailyPlanResult.OverBudgetWarning -> ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(mapOf("error" to "over_budget", "remainingBudget" to result.remainingBudget))
         }
 
     @PutMapping("/{dailyPlanId}")

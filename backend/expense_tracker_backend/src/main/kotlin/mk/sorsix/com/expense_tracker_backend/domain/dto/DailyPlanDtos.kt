@@ -5,7 +5,8 @@ import java.time.LocalDate
 
 data class DailyPlanRequest(
     val date: LocalDate,
-    val allocatedAmount: BigDecimal
+    val allocatedAmount: BigDecimal,
+    val confirmOverBudget: Boolean? = false
 )
 
 data class DailyPlanResponse(

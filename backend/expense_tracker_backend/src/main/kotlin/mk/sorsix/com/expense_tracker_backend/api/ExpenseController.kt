@@ -44,6 +44,7 @@ class ExpenseController(
         val filter = ExpenseFilter(categoryName, periodStart, periodEnd, search)
         return expenseService.listExpenses(currentUserProvider.resolve(userDetails), filter)
     }
+
     @GetMapping("/{id}")
     fun getById(
         @AuthenticationPrincipal userDetails: UserDetails,
@@ -53,6 +54,7 @@ class ExpenseController(
             is FindExpenseResult.Success -> ResponseEntity.ok(result.expense)
             is FindExpenseResult.ExpenseNotFound -> ResponseEntity.status(HttpStatus.NOT_FOUND)
                 .body(mapOf("error" to "Expense not found"))
+
             is FindExpenseResult.NotOwner -> ResponseEntity.status(HttpStatus.FORBIDDEN)
                 .body(mapOf("error" to "You do not own this expense"))
         }
@@ -66,6 +68,9 @@ class ExpenseController(
             is CreateExpenseResult.Success -> ResponseEntity.ok(result.expense)
             is CreateExpenseResult.CategoryNotFound -> ResponseEntity.status(HttpStatus.BAD_REQUEST)
                 .body(mapOf("error" to "Category not found"))
+
+            is CreateExpenseResult.PlanNotFound -> ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(mapOf("error" to "Plan not found"))
         }
 
     @PutMapping("/{id}")
@@ -87,6 +92,9 @@ class ExpenseController(
 
             is UpdateExpenseResult.ExpenseLocked -> ResponseEntity.status(HttpStatus.CONFLICT)
                 .body(mapOf("error" to "This expense is locked because its week has been summarized"))
+
+            is UpdateExpenseResult.PlanNotFound -> ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(mapOf("error" to "Plan not found"))
         }
 
     @DeleteMapping("/{id}")

@@ -13,13 +13,15 @@ import mk.sorsix.com.expense_tracker_backend.domain.dto.ExpenseResponse
 import mk.sorsix.com.expense_tracker_backend.domain.dto.UpdateExpenseRequest
 import mk.sorsix.com.expense_tracker_backend.repository.ExpenseRepository
 import mk.sorsix.com.expense_tracker_backend.repository.ExpenseSpecifications
+import mk.sorsix.com.expense_tracker_backend.repository.PlanRepository
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 
 @Service
 class ExpenseService(
     private val expenseRepository: ExpenseRepository,
-    private val categoryService: CategoryService
+    private val categoryService: CategoryService,
+    private val planService: PlanService
 ) {
 
     fun findExpenseById(expenseId: Long): Expense? = expenseRepository.findByIdOrNull(expenseId)
@@ -55,10 +57,20 @@ class ExpenseService(
             return CreateExpenseResult.CategoryNotFound
         }
 
+        val plan = request.planId?.let { id ->
+            val foundPlan = planService.findPlanById(id)
+                ?: return CreateExpenseResult.PlanNotFound
+            if (foundPlan.user.id != user.id) {
+                return CreateExpenseResult.PlanNotFound
+            }
+            foundPlan
+        }
+
         val saved = expenseRepository.save(
             Expense(
                 user = user,
                 category = foundCategory,
+                plan = plan,
                 amount = request.amount,
                 expenseDate = request.expenseDate,
                 description = request.description
@@ -88,10 +100,20 @@ class ExpenseService(
             return UpdateExpenseResult.CategoryNotFound
         }
 
+        val plan = request.planId?.let { id ->
+            val foundPlan = planService.findPlanById(id)
+                ?: return UpdateExpenseResult.PlanNotFound
+            if (foundPlan.user.id != user.id) {
+                return UpdateExpenseResult.PlanNotFound
+            }
+            foundPlan
+        }
+
         val updated = expenseRepository.save(
             existing.copy(
                 category = foundCategory,
                 amount = request.amount,
+                plan = plan,
                 expenseDate = request.expenseDate,
                 description = request.description
             )
@@ -120,6 +142,7 @@ class ExpenseService(
         id = id,
         categoryId = category.id,
         categoryName = category.name,
+        planId = plan?.id,
         amount = amount,
         expenseDate = expenseDate,
         description = description

@@ -188,4 +188,29 @@ class DailyPlanControllerTest : AbstractIntegrationTest() {
             jsonPath("$.error") { value("Plan item not found") }
         }
     }
+    @Test
+    fun `over budget daily allocation requires confirmation and can be confirmed`() {
+        val user = mockMvc.registerAndLogin(objectMapper)
+        val planId = createPlan(mockMvc, user.accessToken)
+
+        mockMvc.post("/api/plans/$planId/daily") {
+            contentType = MediaType.APPLICATION_JSON
+            header("Authorization", "Bearer ${user.accessToken}")
+            content = """{"date":"2026-09-13","allocatedAmount":2100.00}"""
+        }.andExpect {
+            status { isEqualTo(409) }
+            jsonPath("$.error") { value("over_budget") }
+            jsonPath("$.remainingBudget") { value(2000.00) }
+        }
+
+        mockMvc.post("/api/plans/$planId/daily") {
+            contentType = MediaType.APPLICATION_JSON
+            header("Authorization", "Bearer ${user.accessToken}")
+            content = """{"date":"2026-09-13","allocatedAmount":2100.00,"confirmOverBudget":true}"""
+        }.andExpect {
+            status { isOk() }
+            jsonPath("$.allocatedAmount") { value(2100.00) }
+        }
+    }
+
 }

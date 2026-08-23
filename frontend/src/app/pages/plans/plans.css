@@ -1,0 +1,16 @@
+.plans {
+  list-style: none;
+  padding: 0;
+}
+
+.plans li {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.budget {
+  margin-left: auto;
+}
