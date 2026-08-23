@@ -6,6 +6,8 @@ import { firstValueFrom, map, mergeMap, of } from 'rxjs';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Expense } from '../../../models/expense';
 import { Category } from '../../../models/category';
+import { PlanService } from '../../../services/plan.service';
+import { Plan } from '../../../models/plan';
 
 @Component({
   selector: 'app-expense-form',
@@ -16,11 +18,13 @@ import { Category } from '../../../models/category';
 export class ExpenseForm implements OnInit {
   service = inject(ExpenseService);
   categoryService = inject(CategoryService);
+  planService = inject(PlanService);
   router = inject(Router);
   route = inject(ActivatedRoute);
 
   expense: Expense | undefined;
   categories = signal<Category[]>([]);
+  plans = signal<Plan[]>([]);
 
   expenseModel = signal<ExpenseFormModel>({
     categoryId: '0',
@@ -63,6 +67,8 @@ export class ExpenseForm implements OnInit {
 
   ngOnInit(): void {
     this.categoryService.getCategories().subscribe((categories) => this.categories.set(categories));
+    this.planService.getPlans().subscribe((plans) => this.plans.set(plans));
+
 
     this.route.paramMap
       .pipe(

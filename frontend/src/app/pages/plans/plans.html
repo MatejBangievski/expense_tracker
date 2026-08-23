@@ -1,0 +1,18 @@
+<h1>Plans</h1>
+<a routerLink="/plans/create">Add plan</a>
+
+@if (plans().loading) {
+  <p>Loading...</p>
+} @else {
+  <ul class="plans">
+    @for (plan of plans().data; track plan.id) {
+      <li>
+        <a [routerLink]="['/plans', plan.id]">{{ plan.name }}</a>
+        <span class="dates">{{ plan.startDate }} – {{ plan.endDate }}</span>
+        <span class="budget">{{ plan.totalPlanned | currency }} / {{ plan.totalBudget | currency }}</span>
+        <a [routerLink]="['/plans/edit', plan.id]">Edit</a>
+        <button type="button" (click)="onDelete(plan.id)">Delete</button>
+      </li>
+    }
+  </ul>
+}

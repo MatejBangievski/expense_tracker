@@ -54,6 +54,12 @@ class PlanItemController(
 
             is CreatePlanItemResult.CategoryNotFound ->
                 ResponseEntity.status(HttpStatus.BAD_REQUEST).body(mapOf("error" to "Category not found"))
+
+            is CreatePlanItemResult.OverBudgetWarning -> ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(mapOf("error" to "over_budget", "remainingBudget" to result.remainingBudget))
+
+            is CreatePlanItemResult.DateOutsideRange -> ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(mapOf("error" to "Date is outside the plan's date range"))
         }
 
     @PutMapping("/{itemId}")
@@ -73,6 +79,12 @@ class PlanItemController(
 
             is UpdatePlanItemResult.CategoryNotFound -> ResponseEntity.status(HttpStatus.BAD_REQUEST)
                 .body(mapOf("error" to "Category not found"))
+
+            is UpdatePlanItemResult.OverBudgetWarning -> ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(mapOf("error" to "over_budget", "remainingBudget" to result.remainingBudget))
+
+            is UpdatePlanItemResult.DateOutsideRange -> ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(mapOf("error" to "Date is outside the plan's date range"))
         }
 
     @DeleteMapping("/{itemId}")

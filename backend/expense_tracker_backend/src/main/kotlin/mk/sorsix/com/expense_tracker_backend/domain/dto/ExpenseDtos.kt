@@ -7,20 +7,23 @@ data class CreateExpenseRequest(
     val categoryId: Long,
     val amount: BigDecimal,
     val expenseDate: LocalDate,
-    val description: String? = null
+    val description: String? = null,
+    val planId: Long? = null
 )
 
 data class UpdateExpenseRequest(
     val categoryId: Long,
     val amount: BigDecimal,
     val expenseDate: LocalDate,
-    val description: String? = null
+    val description: String? = null,
+    val planId: Long? = null
 )
 
 data class ExpenseResponse(
     val id: Long,
     val categoryId: Long,
     val categoryName: String,
+    val planId: Long? = null,
     val amount: BigDecimal,
     val expenseDate: LocalDate,
     val description: String?
