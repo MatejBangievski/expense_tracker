@@ -4,9 +4,19 @@
     <p class="text-body-secondary mb-0">Here's what's happening with your expenses.</p>
   </div>
 
+  <div class="row g-4 mb-4">
+    <div class="col-12 col-sm-6 col-xl-3">
+      <app-total-expenses />
+    </div>
+  </div>
+
   <div class="row g-4">
     <div class="col-12 col-xl-8">
       <app-expenses-overview />
+
+      <div class="mt-4">
+        <app-spending-trends />
+      </div>
 
       @if (hasPreviousMonth()) {
         <button type="button" class="btn btn-outline-primary mt-4" (click)="compareWithPreviousMonth()">

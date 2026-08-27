@@ -27,38 +27,18 @@
             </div>
           </div>
 
-          <div class="row g-3 mb-3">
-            <div class="col-12 col-sm-6">
-              <label for="startDate" class="form-label">Start date</label>
-              <input
-                id="startDate"
-                type="date"
-                class="form-control"
-                [class.is-invalid]="planForm.startDate().dirty() && planForm.startDate().invalid()"
-                [formField]="planForm.startDate"
-              />
-              <div class="invalid-feedback">
-                @for (error of planForm.startDate().errors(); track error.kind) {
-                  <div>{{ error.message }}</div>
-                }
-              </div>
-            </div>
-
-            <div class="col-12 col-sm-6">
-              <label for="endDate" class="form-label">End date</label>
-              <input
-                id="endDate"
-                type="date"
-                class="form-control"
-                [class.is-invalid]="planForm.endDate().dirty() && planForm.endDate().invalid()"
-                [formField]="planForm.endDate"
-              />
-              <div class="invalid-feedback">
-                @for (error of planForm.endDate().errors(); track error.kind) {
-                  <div>{{ error.message }}</div>
-                }
-              </div>
-            </div>
+          <div class="mb-3">
+            <label class="form-label d-block">Date range</label>
+            <mat-form-field appearance="outline" subscriptSizing="dynamic" class="form-daterange">
+              <mat-label>Start – End</mat-label>
+              <mat-date-range-input [rangePicker]="picker">
+                <input matStartDate placeholder="Start" readonly [value]="startDateValue()" (dateChange)="onStartDateChange($event)" (click)="picker.open()" />
+                <input matEndDate placeholder="End" readonly [value]="endDateValue()" (dateChange)="onEndDateChange($event)" (click)="picker.open()" />
+              </mat-date-range-input>
+              <mat-datepicker-toggle matIconSuffix [for]="picker"></mat-datepicker-toggle>
+              <mat-date-range-picker #picker></mat-date-range-picker>
+            </mat-form-field>
+            <div class="form-text">Pick the plan's start and end date.</div>
           </div>
 
           <div class="mb-4">

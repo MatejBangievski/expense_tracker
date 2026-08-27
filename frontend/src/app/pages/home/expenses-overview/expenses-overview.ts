@@ -8,6 +8,7 @@ import { ActiveElement, ChartData, ChartEvent, ChartOptions } from 'chart.js';
 import { ExpenseService } from '../../../services/expense.service';
 import { Expense, ExpenseFilter } from '../../../models/expense';
 import { Spinner } from '../../../shared/spinner/spinner';
+import { chartColor } from '../../../shared/chart-colors';
 
 type Period = 'weekly' | 'monthly' | 'yearly';
 
@@ -16,9 +17,11 @@ interface CategorySegment {
   amount: number;
   share: number;
   color: string;
+  link: (string | number)[] | null;
+  queryParams: Record<string, string> | null;
 }
 
-const SEGMENT_COLORS = ['#3b82f6', '#34c77b', '#f5c451', '#ef5b5b', '#a78bfa'];
+const MAX_CATEGORIES = 8;
 const OTHERS_COLOR = '#cbd5e1';
 
 @Component({
@@ -74,10 +77,10 @@ export class ExpensesOverview {
       return;
     }
     const segment = this.segments()[elements[0].index];
-    if (!segment || segment.name === 'Others') {
+    if (!segment?.link) {
       return;
     }
-    this.router.navigate(['/expenses'], { queryParams: { categoryName: segment.name } });
+    this.router.navigate(segment.link, segment.queryParams ? { queryParams: segment.queryParams } : {});
   }
 
   private buildSegments(expenses: Expense[]): CategorySegment[] {
@@ -92,19 +95,25 @@ export class ExpensesOverview {
       return [];
     }
 
-    const top = sorted.slice(0, SEGMENT_COLORS.length);
-    const rest = sorted.slice(SEGMENT_COLORS.length);
-
-    const segments: CategorySegment[] = top.map(([name, amount], index) => ({
+    const segments: CategorySegment[] = sorted.slice(0, MAX_CATEGORIES).map(([name, amount], index) => ({
       name,
       amount,
       share: amount / total,
-      color: SEGMENT_COLORS[index],
+      color: chartColor(index),
+      link: ['/expenses'],
+      queryParams: { categoryName: name },
     }));
 
-    const othersAmount = rest.reduce((sum, [, amount]) => sum + amount, 0);
+    const othersAmount = sorted.slice(MAX_CATEGORIES).reduce((sum, [, amount]) => sum + amount, 0);
     if (othersAmount > 0) {
-      segments.push({ name: 'Others', amount: othersAmount, share: othersAmount / total, color: OTHERS_COLOR });
+      segments.push({
+        name: 'Others',
+        amount: othersAmount,
+        share: othersAmount / total,
+        color: OTHERS_COLOR,
+        link: null,
+        queryParams: null,
+      });
     }
 
     return segments;
