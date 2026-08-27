@@ -5,12 +5,15 @@ import { ActivatedRoute, RouterLink } from '@angular/router';
 import { ComparisonService } from '../../services/comparison.service';
 import { UserService } from '../../services/user.service';
 import { AvailablePeriod, PeriodComparison, PeriodType, periodLabel } from '../../models/period-comparison';
+import { Spinner } from '../../shared/spinner/spinner';
+import { BaseChartDirective } from 'ng2-charts';
+import { ChartData, ChartOptions } from 'chart.js';
+import { CHART_COLORS, CHART_TRACK } from '../../shared/chart-colors';
 
 @Component({
   selector: 'app-comparison',
-  imports: [CurrencyPipe, DecimalPipe, RouterLink],
+  imports: [CurrencyPipe, DecimalPipe, RouterLink, Spinner, BaseChartDirective],
   templateUrl: './comparison.html',
-  styleUrl: './comparison.css',
 })
 export class Comparison implements OnInit {
   comparisonService = inject(ComparisonService);
@@ -37,6 +40,49 @@ export class Comparison implements OnInit {
 
   optionsA = computed(() => this.periods().filter((p) => p.periodStart !== this.periodB()));
   optionsB = computed(() => this.periods().filter((p) => p.periodStart !== this.periodA()));
+
+  categoryChartData = computed<ChartData<'bar'>>(() => {
+    const r = this.result();
+    if (!r) {
+      return { labels: [], datasets: [] };
+    }
+    return {
+      labels: r.categories.map((c) => c.categoryName),
+      datasets: [
+        {
+          label: this.label(r.previousPeriodStart, r.periodType),
+          data: r.categories.map((c) => c.previousAmount),
+          backgroundColor: CHART_TRACK,
+          borderWidth: 0,
+        },
+        {
+          label: this.label(r.currentPeriodStart, r.periodType),
+          data: r.categories.map((c) => c.currentAmount),
+          backgroundColor: CHART_COLORS[0],
+          borderWidth: 0,
+        },
+      ],
+    };
+  });
+
+  categoryChartOptions: ChartOptions<'bar'> = {
+    indexAxis: 'y',
+    responsive: true,
+    maintainAspectRatio: false,
+    scales: {
+      x: { ticks: { callback: (value) => '$' + value } },
+    },
+    plugins: {
+      legend: { position: 'top' },
+      tooltip: {
+        callbacks: {
+          label: (ctx) => `${ctx.dataset.label}: $${Number(ctx.parsed.x).toFixed(2)}`,
+        },
+      },
+    },
+  };
+
+  chartHeight = computed(() => Math.max(200, (this.result()?.categories.length ?? 0) * 44 + 60));
 
   ngOnInit(): void {
     this.userService.getApiKey().subscribe((key) => this.hasApiKey.set(key !== null));

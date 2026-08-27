@@ -32,20 +32,64 @@
       <div class="alert alert-info">{{ savingPlan.recommendationMessage }}</div>
     }
 
-    <h2 class="h6 text-secondary mb-2">Categories</h2>
+    @if (breakdownLegend().length > 0) {
+      <div class="card shadow-sm mb-4">
+        <div class="card-body p-4">
+          <h2 class="h6 text-body-secondary mb-3">Spending breakdown</h2>
+          <div class="breakdown-wrap mb-3">
+            <canvas
+              baseChart
+              type="bar"
+              role="img"
+              aria-label="Spending breakdown by category"
+              [data]="breakdownData()"
+              [options]="breakdownOptions"
+            ></canvas>
+          </div>
+          <ul class="list-unstyled mb-0 d-flex flex-wrap gap-3">
+            @for (item of breakdownLegend(); track item.name) {
+              <li class="d-flex align-items-center">
+                <span class="legend-dot me-2" [style.background-color]="item.color"></span>
+                <span class="me-1">{{ item.name }}</span>
+                <span class="text-body-secondary small">{{ item.amount | currency }}</span>
+              </li>
+            }
+          </ul>
+        </div>
+      </div>
+    }
+
+    <h2 class="h6 text-body-secondary mb-2">Categories</h2>
     <div class="row g-3">
-      @for (limit of savingPlan.categoryLimits; track limit.categoryId) {
-        <div class="col-md-4">
-          <div class="card p-3 h-100">
-            <p class="h6 mb-2">{{ limit.categoryName }}</p>
-            <p class="text-secondary small mb-1">Spent this month</p>
-            <p class="mb-2">{{ (limit.actualSpent ?? 0) | currency }}</p>
-            <p class="text-secondary small mb-1">Limit</p>
-            <p class="mb-0">{{ limit.monthlyLimit | currency }}</p>
+      @for (donut of donuts(); track donut.name) {
+        <div class="col-6 col-md-4 col-lg-3">
+          <div class="card shadow-sm h-100">
+            <div class="card-body p-3 text-center">
+              <p class="fw-semibold mb-2 text-truncate">{{ donut.name }}</p>
+              <div class="donut-wrap mx-auto">
+                <canvas
+                  baseChart
+                  type="doughnut"
+                  role="img"
+                  [attr.aria-label]="donut.name + ': ' + donut.percent + '% of limit spent'"
+                  [data]="donut.data"
+                  [options]="donutOptions"
+                ></canvas>
+                <div class="chart-center">
+                  <span class="fw-semibold" [class.text-danger]="donut.over">
+                    {{ donut.over ? 'Over' : donut.percent + '%' }}
+                  </span>
+                </div>
+              </div>
+              <p class="mb-0 mt-2 small">{{ donut.spent | currency }} / {{ donut.limit | currency }}</p>
+              @if (donut.over) {
+                <p class="mb-0 small text-danger">+{{ donut.overBy | currency }} over</p>
+              }
+            </div>
           </div>
         </div>
       } @empty {
-        <p class="text-secondary">No category limits in this plan.</p>
+        <p class="text-body-secondary">No category limits in this plan.</p>
       }
     </div>
   </div>
@@ -73,15 +117,18 @@
         <input
           id="aiBudget"
           type="number"
-          min="0"
+          [attr.min]="minAiBudget()"
           class="form-control mb-2"
           [value]="aiBudget()"
           (input)="aiBudget.set($any($event.target).valueAsNumber)"
         />
+        @if (minAiBudget() > 0) {
+          <div class="form-text mb-2">At least {{ minAiBudget() | currency }} (10% above the {{ currentSpent() | currency }} already spent).</div>
+        }
         @if (aiError()) {
           <div class="alert alert-danger py-2">{{ aiError() }}</div>
         }
-        <button type="button" class="btn btn-primary d-inline-flex align-items-center gap-2" (click)="generateAi()" [disabled]="aiLoading()">
+        <button type="button" class="btn btn-primary d-inline-flex align-items-center gap-2" (click)="generateAi()" [disabled]="aiLoading() || aiBudget() <= 0 || aiBudget() < minAiBudget()">
           @if (aiLoading()) {
             <mat-progress-spinner mode="indeterminate" [diameter]="18" aria-label="Generating" />
             Generating…

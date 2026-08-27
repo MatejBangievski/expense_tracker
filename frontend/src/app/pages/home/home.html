@@ -7,6 +7,12 @@
   <div class="row g-4">
     <div class="col-12 col-xl-8">
       <app-expenses-overview />
+
+      @if (hasPreviousMonth()) {
+        <button type="button" class="btn btn-outline-primary mt-4" (click)="compareWithPreviousMonth()">
+          Compare with previous month
+        </button>
+      }
     </div>
   </div>
 </div>
