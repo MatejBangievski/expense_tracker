@@ -1,6 +1,6 @@
-<div class="card shadow-sm h-100">
-  <div class="card-body p-4">
-    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+<div class="card shadow-sm">
+  <div class="card-body p-3">
+    <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
       <h2 class="h5 mb-0">Expenses Overview</h2>
       <div class="btn-group btn-group-sm" role="group" aria-label="Period">
         <button type="button" class="btn btn-outline-secondary" [class.active]="period() === 'weekly'" (click)="setPeriod('weekly')">Weekly</button>
@@ -30,14 +30,15 @@
             @for (segment of segments(); track segment.name) {
               <li>
                 <a
-                  class="legend-row d-flex align-items-center py-2 border-bottom text-decoration-none text-body"
-                  [routerLink]="segment.name === 'Others' ? null : ['/expenses']"
-                  [queryParams]="segment.name === 'Others' ? null : { categoryName: segment.name }"
+                  class="legend-row d-flex align-items-center py-1 border-bottom text-decoration-none text-body small"
+                  [routerLink]="segment.link"
+                  [queryParams]="segment.queryParams"
                 >
                   <span class="legend-dot me-2" [style.background-color]="segment.color"></span>
-                  <span class="flex-grow-1 text-truncate">{{ segment.name }}</span>
+                  <span class="text-truncate">{{ segment.name }}</span>
+                  <span class="flex-grow-1"></span>
                   <span class="fw-medium me-3">{{ segment.amount | currency }}</span>
-                  <span class="text-body-secondary small">{{ segment.share | percent: '1.1-1' }}</span>
+                  <span class="text-body-secondary">{{ segment.share | percent: '1.1-1' }}</span>
                 </a>
               </li>
             }

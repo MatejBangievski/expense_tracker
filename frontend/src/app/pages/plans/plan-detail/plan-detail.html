@@ -5,11 +5,40 @@
       @if (plan(); as currentPlan) {
         <p class="text-body-secondary mb-0">
           {{ currentPlan.startDate | date: 'mediumDate' }} – {{ currentPlan.endDate | date: 'mediumDate' }}
-          · {{ currentPlan.totalPlanned | currency }} planned of {{ currentPlan.totalBudget | currency }}
+          · {{ currentPlan.totalPlanned | currency }} spent of {{ currentPlan.totalBudget | currency }}
         </p>
       }
     </div>
     <a routerLink="/plans" class="btn btn-outline-secondary btn-sm">← Back to plans</a>
+  </div>
+
+  <div class="card shadow-sm mb-4">
+    <div class="card-body p-4 d-flex flex-wrap align-items-center gap-4">
+      <div class="budget-donut position-relative">
+        <canvas
+          baseChart
+          type="doughnut"
+          role="img"
+          [attr.aria-label]="'Planned ' + budgetPercent() + '% of budget'"
+          [data]="budgetDonutData()"
+          [options]="budgetDonutOptions"
+        ></canvas>
+        <div class="chart-center">
+          <span class="fw-semibold" [class.text-danger]="overBudget()">
+            {{ overBudget() ? 'Over' : budgetPercent() + '%' }}
+          </span>
+        </div>
+      </div>
+      <div>
+        <p class="text-body-secondary small mb-1">Spent of budget</p>
+        <p class="h4 mb-1">{{ plannedTotal() | currency }} <span class="text-body-secondary fs-6">/ {{ budget() | currency }}</span></p>
+        @if (overBudget()) {
+          <p class="mb-0 small text-danger">{{ overBy() | currency }} over budget</p>
+        } @else {
+          <p class="mb-0 small text-body-secondary">{{ remaining() | currency }} remaining</p>
+        }
+      </div>
+    </div>
   </div>
 
   <div class="card shadow-sm mb-4">

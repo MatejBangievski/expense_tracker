@@ -4,10 +4,12 @@ import { Router } from '@angular/router';
 import { UserService } from '../../services/user.service';
 import { ComparisonService } from '../../services/comparison.service';
 import { ExpensesOverview } from './expenses-overview/expenses-overview';
+import { TotalExpenses } from './total-expenses/total-expenses';
+import { SpendingTrends } from './spending-trends/spending-trends';
 
 @Component({
   selector: 'app-home',
-  imports: [ExpensesOverview],
+  imports: [ExpensesOverview, TotalExpenses, SpendingTrends],
   templateUrl: './home.html',
 })
 export class Home implements OnInit {
