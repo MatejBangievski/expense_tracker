@@ -1,6 +1,8 @@
-import { Component, computed, inject } from '@angular/core';
+import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
+import { Router } from '@angular/router';
 import { UserService } from '../../services/user.service';
+import { ComparisonService } from '../../services/comparison.service';
 import { ExpensesOverview } from './expenses-overview/expenses-overview';
 
 @Component({
@@ -8,10 +10,16 @@ import { ExpensesOverview } from './expenses-overview/expenses-overview';
   imports: [ExpensesOverview],
   templateUrl: './home.html',
 })
-export class Home {
+export class Home implements OnInit {
   private userService = inject(UserService);
+  private comparisonService = inject(ComparisonService);
+  private router = inject(Router);
 
   user = toSignal(this.userService.getCurrentUser());
+
+  hasPreviousMonth = signal(false);
+  private readonly thisMonthStart = this.monthStart(0);
+  private readonly prevMonthStart = this.monthStart(-1);
 
   greeting = computed(() => {
     const hour = new Date().getHours();
@@ -23,4 +31,22 @@ export class Home {
     }
     return 'Good evening';
   });
+
+  ngOnInit(): void {
+    this.comparisonService.availablePeriods('MONTH').subscribe((periods) => {
+      this.hasPreviousMonth.set(periods.some((p) => p.periodStart === this.prevMonthStart));
+    });
+  }
+
+  compareWithPreviousMonth(): void {
+    this.router.navigate(['/comparison'], {
+      queryParams: { type: 'MONTH', current: this.thisMonthStart, previous: this.prevMonthStart, run: 1 },
+    });
+  }
+
+  private monthStart(offset: number): string {
+    const now = new Date();
+    const d = new Date(now.getFullYear(), now.getMonth() + offset, 1);
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-01`;
+  }
 }

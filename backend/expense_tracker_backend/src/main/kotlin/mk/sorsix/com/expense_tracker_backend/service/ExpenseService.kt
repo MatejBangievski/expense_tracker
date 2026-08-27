@@ -1,6 +1,7 @@
 package mk.sorsix.com.expense_tracker_backend.service
 
 
+import mk.sorsix.com.expense_tracker_backend.domain.Category
 import mk.sorsix.com.expense_tracker_backend.domain.CreateExpenseResult
 import mk.sorsix.com.expense_tracker_backend.domain.DeleteExpenseResult
 import mk.sorsix.com.expense_tracker_backend.domain.Expense
@@ -13,15 +14,21 @@ import mk.sorsix.com.expense_tracker_backend.domain.dto.ExpenseResponse
 import mk.sorsix.com.expense_tracker_backend.domain.dto.UpdateExpenseRequest
 import mk.sorsix.com.expense_tracker_backend.repository.ExpenseRepository
 import mk.sorsix.com.expense_tracker_backend.repository.ExpenseSpecifications
-import mk.sorsix.com.expense_tracker_backend.repository.PlanRepository
+import mk.sorsix.com.expense_tracker_backend.util.money
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
+import org.springframework.transaction.annotation.Transactional
+import java.math.BigDecimal
+import java.time.Clock
+import java.time.LocalDate
 
 @Service
 class ExpenseService(
     private val expenseRepository: ExpenseRepository,
     private val categoryService: CategoryService,
-    private val planService: PlanService
+    private val planService: PlanService,
+    private val monthlySavingService: MonthlySavingService,
+    private val clock: Clock,
 ) {
 
     fun findExpenseById(expenseId: Long): Expense? = expenseRepository.findByIdOrNull(expenseId)
@@ -48,6 +55,7 @@ class ExpenseService(
         }
     }
 
+    @Transactional
     fun createExpense(user: User, request: CreateExpenseRequest): CreateExpenseResult {
         val foundCategory = categoryService.findCategoryById(request.categoryId)
             ?: return CreateExpenseResult.CategoryNotFound
@@ -55,6 +63,12 @@ class ExpenseService(
         val categoryOwner = foundCategory.user
         if (categoryOwner != null && categoryOwner.id != user.id) {
             return CreateExpenseResult.CategoryNotFound
+        }
+
+        if (request.confirmOverBudget != true) {
+            overBudgetWarning(user, foundCategory, request.amount, request.expenseDate, null)?.let {
+                return CreateExpenseResult.OverBudgetWarning(it)
+            }
         }
 
         val plan = request.planId?.let { id ->
@@ -80,6 +94,7 @@ class ExpenseService(
         return CreateExpenseResult.Success(saved.toResponse())
     }
 
+    @Transactional
     fun updateExpense(user: User, expenseId: Long, request: UpdateExpenseRequest): UpdateExpenseResult {
         val existing = expenseRepository.findById(expenseId).orElse(null)
             ?: return UpdateExpenseResult.ExpenseNotFound
@@ -98,6 +113,12 @@ class ExpenseService(
         val categoryOwner = foundCategory.user
         if (categoryOwner != null && categoryOwner.id != user.id) {
             return UpdateExpenseResult.CategoryNotFound
+        }
+
+        if (request.confirmOverBudget != true) {
+            overBudgetWarning(user, foundCategory, request.amount, request.expenseDate, expenseId)?.let {
+                return UpdateExpenseResult.OverBudgetWarning(it)
+            }
         }
 
         val plan = request.planId?.let { id ->
@@ -136,6 +157,38 @@ class ExpenseService(
 
         expenseRepository.delete(existing)
         return DeleteExpenseResult.Success
+    }
+
+    private fun overBudgetWarning(user: User, category: Category, amount: BigDecimal, date: LocalDate, excludeExpenseId: Long?, ): String? {
+        val monthStart = LocalDate.now(clock).withDayOfMonth(1)
+        if (date.withDayOfMonth(1) != monthStart) return null
+        val plan = monthlySavingService.getCurrentPlan(user) ?: return null
+        val monthEnd = monthStart.plusMonths(1).minusDays(1)
+
+        val monthExpenses = expenseRepository.findByUserIdAndExpenseDateBetween(user.id, monthStart, monthEnd)
+            .filter { it.id != excludeExpenseId }
+        val categoriesById = categoryService.categoriesById(user.id)
+        val rootId = categoryService.rootOf(category, categoriesById).id
+
+        val categoryLimit = plan.categoryLimits.firstOrNull { it.categoryId == rootId }
+        if (categoryLimit != null) {
+            val categorySpent = monthExpenses
+                .filter { categoryService.rootOf(it.category, categoriesById).id == rootId }
+                .fold(BigDecimal.ZERO) { acc, e -> acc + e.amount }
+            val overBy = categorySpent + amount - categoryLimit.monthlyLimit
+            if (overBy > BigDecimal.ZERO) {
+                return "This puts the ${categoryLimit.categoryName} category over its ${categoryLimit.monthlyLimit.money()} limit for this month. Add it anyway?"
+            }
+        }
+
+        if (plan.totalBudgetLimit > BigDecimal.ZERO) {
+            val totalSpent = monthExpenses.fold(BigDecimal.ZERO) { acc, e -> acc + e.amount }
+            val overBy = totalSpent + amount - plan.totalBudgetLimit
+            if (overBy > BigDecimal.ZERO) {
+                return "This puts you over your ${plan.totalBudgetLimit.money()} monthly budget. Add it anyway?"
+            }
+        }
+        return null
     }
 
     private fun Expense.toResponse() = ExpenseResponse(

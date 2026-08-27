@@ -113,28 +113,33 @@
         <h2 class="settings-title">Gemini API key</h2>
         <p class="text-secondary small mb-2">Status: {{ apiKeyMasked() ? apiKeyMasked() : 'Not set' }}</p>
 
-        <div class="mb-2">
-          <label for="apiKey" class="form-label">New API key</label>
-          <input
-            id="apiKey"
-            type="password"
-            class="form-control"
-            [value]="apiKeyInput()"
-            (input)="apiKeyInput.set($any($event.target).value)"
-          />
-        </div>
+        @if (!apiKeyMasked()) {
+          <div class="mb-2">
+            <label for="apiKey" class="form-label">New API key</label>
+            <input
+              id="apiKey"
+              type="password"
+              class="form-control"
+              [value]="apiKeyInput()"
+              (input)="apiKeyInput.set($any($event.target).value)"
+            />
+          </div>
+        }
 
         @if (apiKeyMessage()) {
           <div class="alert alert-success py-2">{{ apiKeyMessage() }}</div>
         }
 
         <div class="d-flex gap-2">
-          <button type="button" class="btn btn-primary" (click)="saveApiKey()" [disabled]="!apiKeyInput().trim()">
-            Save key
-          </button>
-          <button type="button" class="btn btn-outline-danger" (click)="removeApiKey()" [disabled]="!apiKeyMasked()">
-            Remove key
-          </button>
+          @if (apiKeyMasked()) {
+            <button type="button" class="btn btn-outline-danger" (click)="removeApiKey()">
+              Remove key
+            </button>
+          } @else {
+            <button type="button" class="btn btn-primary" (click)="saveApiKey()" [disabled]="!apiKeyInput().trim()">
+              Save key
+            </button>
+          }
         </div>
       </div>
     }

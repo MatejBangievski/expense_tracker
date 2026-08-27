@@ -20,4 +20,11 @@ data class PeriodComparisonResponse(
     val currentTotalSpent: BigDecimal,
     val previousTotalSpent: BigDecimal,
     val comparisonMessage: String?,
+    val categories: List<CategoryComparison> = emptyList(),
+)
+
+data class CategoryComparison(
+    val categoryName: String,
+    val currentAmount: BigDecimal,
+    val previousAmount: BigDecimal,
 )

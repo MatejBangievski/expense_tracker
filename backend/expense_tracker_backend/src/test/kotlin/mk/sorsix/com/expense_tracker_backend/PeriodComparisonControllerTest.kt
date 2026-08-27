@@ -13,6 +13,7 @@ import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc
 import org.hamcrest.Matchers.nullValue
 import org.springframework.http.MediaType
 import org.springframework.test.web.servlet.MockMvc
+import org.springframework.test.web.servlet.get
 import org.springframework.test.web.servlet.post
 import java.time.LocalDate
 
@@ -58,6 +59,25 @@ class PeriodComparisonControllerTest : AbstractIntegrationTest() {
             jsonPath("$.currentTotalSpent") { exists() }
             jsonPath("$.previousTotalSpent") { exists() }
             jsonPath("$.comparisonMessage") { value(nullValue()) }
+            jsonPath("$.categories") { isNotEmpty() }
+            jsonPath("$.categories[0].currentAmount") { exists() }
+            jsonPath("$.categories[0].previousAmount") { exists() }
+        }
+    }
+
+    @Test
+    fun `lists available month periods derived from expenses`() {
+        val user = mockMvc.registerAndLogin(objectMapper)
+        postExpense(user, 5, "80.00", LocalDate.now())
+        postExpense(user, 5, "150.00", LocalDate.now().minusMonths(1))
+
+        mockMvc.get("/api/period-summaries?periodType=MONTH") {
+            header("Authorization", "Bearer ${user.accessToken}")
+        }.andExpect {
+            status { isOk() }
+            jsonPath("$.length()") { value(2) }
+            jsonPath("$[0].periodStart") { exists() }
+            jsonPath("$[0].totalSpent") { exists() }
         }
     }
 

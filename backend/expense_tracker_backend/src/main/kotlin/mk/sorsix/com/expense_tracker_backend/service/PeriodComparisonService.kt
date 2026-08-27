@@ -9,6 +9,7 @@ import mk.sorsix.com.expense_tracker_backend.domain.GeneratePeriodSummaryResult
 import mk.sorsix.com.expense_tracker_backend.domain.PeriodComparison
 import mk.sorsix.com.expense_tracker_backend.domain.PeriodType
 import mk.sorsix.com.expense_tracker_backend.domain.User
+import mk.sorsix.com.expense_tracker_backend.domain.dto.CategoryComparison
 import mk.sorsix.com.expense_tracker_backend.domain.dto.PeriodComparisonResponse
 import mk.sorsix.com.expense_tracker_backend.domain.dto.PeriodSummaryResponse
 import mk.sorsix.com.expense_tracker_backend.repository.PeriodComparisonRepository
@@ -82,8 +83,23 @@ class PeriodComparisonService(
                 currentTotalSpent = currentSummary.totalSpent,
                 previousTotalSpent = previousSummary.totalSpent,
                 comparisonMessage = comparison.comparisonMessage,
+                categories = categoryComparisons(currentSummary, previousSummary),
             )
         )
+    }
+
+    private fun categoryComparisons(current: PeriodSummaryResponse, previous: PeriodSummaryResponse): List<CategoryComparison> {
+        val currentByName = current.categories.associateBy { it.categoryName }
+        val previousByName = previous.categories.associateBy { it.categoryName }
+        return (currentByName.keys + previousByName.keys)
+            .map { name ->
+                CategoryComparison(
+                    categoryName = name,
+                    currentAmount = currentByName[name]?.totalAmount ?: BigDecimal.ZERO,
+                    previousAmount = previousByName[name]?.totalAmount ?: BigDecimal.ZERO,
+                )
+            }
+            .sortedByDescending { it.currentAmount }
     }
 
     private fun findOrCreateSummary(user: User, periodType: PeriodType, date: LocalDate): PeriodSummaryResponse =
