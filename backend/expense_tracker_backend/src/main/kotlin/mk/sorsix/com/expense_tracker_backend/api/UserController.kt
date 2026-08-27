@@ -51,7 +51,14 @@ class UserController(
         @AuthenticationPrincipal userDetails: UserDetails,
         @RequestBody request: SetApiKeyRequest,
     ): ResponseEntity<ApiKeyResponse> =
-        ResponseEntity.ok(ApiKeyResponse(userService.setApiKey(currentUserProvider.resolve(userDetails), request.apiKey)))
+        ResponseEntity.ok(
+            ApiKeyResponse(
+                userService.setApiKey(
+                    currentUserProvider.resolve(userDetails),
+                    request.apiKey
+                )
+            )
+        )
 
     @GetMapping("/api-key")
     fun getApiKey(
@@ -75,7 +82,11 @@ class UserController(
         @AuthenticationPrincipal userDetails: UserDetails,
         @RequestBody request: ChangePasswordRequest,
     ): ResponseEntity<*> =
-        when (userService.changePassword(currentUserProvider.resolve(userDetails), request.currentPassword, request.newPassword)) {
+        when (userService.changePassword(
+            currentUserProvider.resolve(userDetails),
+            request.currentPassword,
+            request.newPassword
+        )) {
             is ChangePasswordResult.Success -> ResponseEntity.ok(mapOf("message" to "Password updated"))
             is ChangePasswordResult.InvalidCurrentPassword -> ResponseEntity.status(HttpStatus.BAD_REQUEST)
                 .body(mapOf("error" to "Current password is incorrect"))

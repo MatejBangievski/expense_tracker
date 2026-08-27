@@ -68,9 +68,10 @@ export class Expenses implements OnInit {
 
   loading = computed(() => !this.isFiltering() && this.expenses().loading);
 
-  displayedExpenses = computed(() =>
-    this.isFiltering() ? this.filterResult() : (this.expenses().data ?? []),
-  );
+  displayedExpenses = computed(() => {
+    const list = this.isFiltering() ? this.filterResult() : (this.expenses().data ?? []);
+    return [...list].sort((a, b) => b.expenseDate.localeCompare(a.expenseDate) || b.id - a.id);
+  });
 
   startDateValue = computed(() => {
     const { periodStart } = this.filterModel();

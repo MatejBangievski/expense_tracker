@@ -1,7 +1,9 @@
-import { Component, inject, OnInit, signal } from '@angular/core';
+import { Component, computed, inject, OnInit, signal } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { form, FormField, FormRoot, required, min } from '@angular/forms/signals';
 import { firstValueFrom } from 'rxjs';
+import { BaseChartDirective } from 'ng2-charts';
+import { ChartData, ChartOptions } from 'chart.js';
 import { PlanItemService } from '../../../services/plan-item.service';
 import { DailyPlanService } from '../../../services/daily-plan.service';
 import { CategoryService } from '../../../services/category.service';
@@ -11,6 +13,7 @@ import { DailyPlan } from '../../../models/daily-plan';
 import { Category } from '../../../models/category';
 import { Plan } from '../../../models/plan';
 import { CurrencyPipe, DatePipe } from '@angular/common';
+import { CHART_DANGER, CHART_TRACK } from '../../../shared/chart-colors';
 
 interface NewItemForm {
   categoryId: string;
@@ -26,8 +29,9 @@ interface NewDailyPlanForm {
 
 @Component({
   selector: 'app-plan-detail',
-  imports: [FormField, FormRoot, RouterLink, CurrencyPipe, DatePipe],
+  imports: [FormField, FormRoot, RouterLink, CurrencyPipe, DatePipe, BaseChartDirective],
   templateUrl: './plan-detail.html',
+  styleUrl: './plan-detail.css',
 })
 export class PlanDetail implements OnInit {
   route = inject(ActivatedRoute);
@@ -42,6 +46,37 @@ export class PlanDetail implements OnInit {
   items = signal<PlanItem[]>([]);
   dailyPlans = signal<DailyPlan[]>([]);
   categories = signal<Category[]>([]);
+
+  budget = computed(() => this.plan()?.totalBudget ?? 0);
+  plannedTotal = computed(() => this.items().reduce((sum, item) => sum + item.plannedAmount, 0));
+  remaining = computed(() => Math.max(this.budget() - this.plannedTotal(), 0));
+  overBudget = computed(() => this.plannedTotal() > this.budget());
+  overBy = computed(() => Math.max(this.plannedTotal() - this.budget(), 0));
+  budgetPercent = computed(() => {
+    const budget = this.budget();
+    return budget > 0 ? Math.round(Math.min(this.plannedTotal() / budget, 1) * 100) : 0;
+  });
+
+  budgetDonutData = computed<ChartData<'doughnut'>>(() => ({
+    labels: ['Spent', 'Remaining'],
+    datasets: [
+      {
+        data: [this.plannedTotal(), this.remaining()],
+        backgroundColor: [CHART_DANGER, CHART_TRACK],
+        borderWidth: 0,
+      },
+    ],
+  }));
+
+  budgetDonutOptions: ChartOptions<'doughnut'> = {
+    responsive: true,
+    maintainAspectRatio: false,
+    cutout: '72%',
+    plugins: {
+      legend: { display: false },
+      tooltip: { enabled: false },
+    },
+  };
 
   itemError = signal('');
   dailyPlanError = signal('');

@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, signal } from '@angular/core';
+import { Component, computed, inject, OnInit, signal } from '@angular/core';
 import { form, FormField, FormRoot, required, min } from '@angular/forms/signals';
 import { CurrencyPipe, DatePipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
@@ -6,6 +6,15 @@ import { PlanService } from '../../../services/plan.service';
 import { firstValueFrom, map, mergeMap, of } from 'rxjs';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Plan } from '../../../models/plan';
+import { MatFormField, MatLabel } from '@angular/material/form-field';
+import {
+  MatDatepickerToggle,
+  MatDateRangeInput,
+  MatDateRangePicker,
+  MatStartDate,
+  MatEndDate,
+  MatDatepickerInputEvent,
+} from '@angular/material/datepicker';
 
 interface PlanFormModel {
   name: string;
@@ -16,7 +25,20 @@ interface PlanFormModel {
 
 @Component({
   selector: 'app-plan-form',
-  imports: [FormField, FormRoot, RouterLink, CurrencyPipe, DatePipe],
+  imports: [
+    FormField,
+    FormRoot,
+    RouterLink,
+    CurrencyPipe,
+    DatePipe,
+    MatFormField,
+    MatLabel,
+    MatDateRangeInput,
+    MatDatepickerToggle,
+    MatDateRangePicker,
+    MatStartDate,
+    MatEndDate,
+  ],
   templateUrl: './plan-form.html',
   styleUrl: '../../form-page.css',
 })
@@ -33,6 +55,32 @@ export class PlanForm implements OnInit {
     endDate: '',
     totalBudget: 0,
   });
+
+  startDateValue = computed(() => (this.planModel().startDate ? new Date(this.planModel().startDate) : null));
+  endDateValue = computed(() => (this.planModel().endDate ? new Date(this.planModel().endDate) : null));
+
+  onStartDateChange(event: MatDatepickerInputEvent<Date>) {
+    const start = event.value;
+    if (!start) {
+      return;
+    }
+    this.planModel.update((model) => ({ ...model, startDate: this.formatDate(start) }));
+  }
+
+  onEndDateChange(event: MatDatepickerInputEvent<Date>) {
+    const end = event.value;
+    if (!end) {
+      return;
+    }
+    this.planModel.update((model) => ({ ...model, endDate: this.formatDate(end) }));
+  }
+
+  private formatDate(date: Date): string {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }
 
   planForm = form(
     this.planModel,

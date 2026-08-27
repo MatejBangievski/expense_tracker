@@ -37,6 +37,7 @@ class PeriodComparisonController(
             is GeneratePeriodComparisonResult.Success -> ResponseEntity.ok(result.comparison)
             is GeneratePeriodComparisonResult.SamePeriod -> ResponseEntity.status(HttpStatus.BAD_REQUEST)
                 .body(mapOf("error" to "Cannot compare a period with itself"))
+
             is GeneratePeriodComparisonResult.InadequatePeriods -> ResponseEntity.status(HttpStatus.BAD_REQUEST)
                 .body(mapOf("error" to "Periods must be of the same type (WEEK, MONTH or YEAR)"))
         }
@@ -55,6 +56,7 @@ class PeriodComparisonController(
             is GeneratePeriodComparisonResult.Success -> ResponseEntity.ok(result.comparison)
             is GeneratePeriodComparisonResult.SamePeriod -> ResponseEntity.status(HttpStatus.BAD_REQUEST)
                 .body(mapOf("error" to "Cannot compare a period with itself"))
+
             is GeneratePeriodComparisonResult.InadequatePeriods -> ResponseEntity.status(HttpStatus.BAD_REQUEST)
                 .body(mapOf("error" to "Periods must be of the same type (WEEK, MONTH or YEAR)"))
         }
