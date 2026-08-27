@@ -3,13 +3,13 @@ import { RouterLink } from '@angular/router';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { ReplaySubject, mergeMap } from 'rxjs';
 import { PlanService } from '../../services/plan.service';
-import { CurrencyPipe } from '@angular/common';
+import { CurrencyPipe, DatePipe } from '@angular/common';
+import { Spinner } from '../../shared/spinner/spinner';
 
 @Component({
   selector: 'app-plans',
-  imports: [RouterLink, CurrencyPipe],
+  imports: [RouterLink, CurrencyPipe, DatePipe, Spinner],
   templateUrl: './plans.html',
-  styleUrl: './plans.css',
 })
 export class Plans implements OnInit {
   service = inject(PlanService);

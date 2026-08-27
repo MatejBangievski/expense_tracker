@@ -19,6 +19,10 @@ html {
   );
 }
 
+// Compact the (only) Material form field so the date-range picker lines up
+// with the Bootstrap filter inputs instead of towering over them.
+@include mat.form-field-density(-4);
+
 body {
   // Default the application to a light color theme. This can be changed to
   // `dark` to enable the dark color theme, or to `light dark` to defer to the

@@ -7,6 +7,7 @@ import { AuthService } from '../../services/auth.service';
 import { UserService } from '../../services/user.service';
 import { Router } from '@angular/router';
 import { CurrencyPipe } from '@angular/common';
+import { Spinner } from '../../shared/spinner/spinner';
 
 interface ProfileForm {
   displayName: string;
@@ -20,7 +21,7 @@ interface PasswordForm {
 
 @Component({
   selector: 'app-dashboard',
-  imports: [FormField, FormRoot, CurrencyPipe],
+  imports: [FormField, FormRoot, CurrencyPipe, Spinner],
   templateUrl: './dashboard.html',
   styleUrl: './dashboard.css',
 })

@@ -1,55 +1,160 @@
-<form [formRoot]="expenseForm">
-  <label for="categoryId">
-    Category:
-    <select id="categoryId" [formField]="expenseForm.categoryId">
-      <option value="0" disabled>Select a category</option>
-      @for (category of categories(); track category.id) {
-        <option [value]="category.id">{{ category.name }}</option>
-      }
-    </select>
-    @if (expenseForm.categoryId().dirty() && expenseForm.categoryId().invalid()) {
-      <div class="errors">
-        @for (error of expenseForm.categoryId().errors(); track error.kind) {
-          <p>{{ error.message }}</p>
-        }
+<div class="d-flex justify-content-between align-items-start mb-4 flex-wrap gap-2">
+  <div>
+    <h1 class="h3 mb-1">{{ expense() ? 'Edit Expense' : 'Add Expense' }}</h1>
+    <p class="text-body-secondary mb-0">Track your spending by adding a new expense.</p>
+  </div>
+  <a routerLink="/expenses" class="btn btn-outline-secondary btn-sm">← Back to expenses</a>
+</div>
+
+<div class="row g-4">
+  <div class="col-12 col-lg-7">
+    <div class="card shadow-sm">
+      <div class="card-body p-4">
+        <form [formRoot]="expenseForm">
+          <div class="mb-3">
+            <label for="expenseDate" class="form-label">Expense date</label>
+            <input
+              id="expenseDate"
+              type="date"
+              class="form-control"
+              [class.is-invalid]="expenseForm.expenseDate().dirty() && expenseForm.expenseDate().invalid()"
+              [formField]="expenseForm.expenseDate"
+            />
+            <div class="invalid-feedback">
+              @for (error of expenseForm.expenseDate().errors(); track error.kind) {
+                <div>{{ error.message }}</div>
+              }
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <label for="categoryId" class="form-label">Category</label>
+            <select
+              id="categoryId"
+              class="form-select"
+              [class.is-invalid]="expenseForm.categoryId().dirty() && expenseForm.categoryId().invalid()"
+              [formField]="expenseForm.categoryId"
+            >
+              <option value="0" disabled>Select a category</option>
+              @for (category of categories(); track category.id) {
+                <option [value]="category.id">{{ category.name }}</option>
+              }
+            </select>
+            <div class="invalid-feedback">
+              @for (error of expenseForm.categoryId().errors(); track error.kind) {
+                <div>{{ error.message }}</div>
+              }
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <label for="amount" class="form-label">Amount</label>
+            <div class="input-group">
+              <span class="input-group-text">$</span>
+              <input
+                id="amount"
+                type="number"
+                step="0.01"
+                class="form-control"
+                [class.is-invalid]="expenseForm.amount().dirty() && expenseForm.amount().invalid()"
+                [formField]="expenseForm.amount"
+              />
+              <div class="invalid-feedback">
+                @for (error of expenseForm.amount().errors(); track error.kind) {
+                  <div>{{ error.message }}</div>
+                }
+              </div>
+            </div>
+          </div>
+
+          <div class="mb-4">
+            <label for="description" class="form-label">
+              Description <span class="text-body-secondary">(optional)</span>
+            </label>
+            <textarea
+              id="description"
+              class="form-control"
+              rows="3"
+              [class.is-invalid]="expenseForm.description().dirty() && expenseForm.description().invalid()"
+              [formField]="expenseForm.description"
+            ></textarea>
+            <div class="invalid-feedback">
+              @for (error of expenseForm.description().errors(); track error.kind) {
+                <div>{{ error.message }}</div>
+              }
+            </div>
+            <div class="form-text text-end">{{ expenseModel().description.length }} / 200</div>
+          </div>
+
+          <button
+            type="submit"
+            class="btn btn-primary w-100"
+            [disabled]="!expenseForm().valid() || expenseForm().submitting()"
+          >
+            @if (expenseForm().submitting()) {
+              Saving...
+            } @else {
+              {{ expense() ? 'Save changes' : 'Add Expense' }}
+            }
+          </button>
+          <a routerLink="/expenses" class="btn btn-outline-secondary w-100 mt-2">Cancel</a>
+        </form>
       </div>
-    }
-  </label>
+    </div>
+  </div>
 
-  <label
-  >Amount:
-    <input type="number" step="0.01" [formField]="expenseForm.amount" />
-    @if (expenseForm.amount().dirty() && expenseForm.amount().invalid()) {
-      <div class="errors">
-        @for (error of expenseForm.amount().errors(); track error.kind) {
-          <p>{{ error.message }}</p>
-        }
+  <div class="col-12 col-lg-5">
+    <div class="card shadow-sm">
+      <div class="card-body p-4">
+        <h2 class="text-uppercase text-body-secondary fw-semibold small mb-3">Preview</h2>
+
+        <div class="text-center mb-3">
+          <span class="preview-icon bg-primary-subtle text-primary mb-2">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <line x1="12" y1="1" x2="12" y2="23" />
+              <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+            </svg>
+          </span>
+          <div class="fw-semibold">{{ selectedCategory()?.name ?? 'No category selected' }}</div>
+        </div>
+
+        <hr />
+
+        <dl class="row mb-0">
+          <dt class="col-5 text-body-secondary fw-normal">Date</dt>
+          <dd class="col-7 text-end mb-2">{{ expenseModel().expenseDate ? (expenseModel().expenseDate | date: 'mediumDate') : '—' }}</dd>
+
+          <dt class="col-5 text-body-secondary fw-normal">Amount</dt>
+          <dd class="col-7 text-end mb-2">{{ expenseModel().amount | currency }}</dd>
+
+          <dt class="col-5 text-body-secondary fw-normal">Description</dt>
+          <dd class="col-7 text-end mb-0">{{ expenseModel().description || 'None' }}</dd>
+        </dl>
+
+        <div class="d-flex justify-content-between align-items-center bg-body-secondary rounded p-3 mt-3">
+          <span class="text-body-secondary">Total</span>
+          <span class="fs-5 fw-semibold">{{ expenseModel().amount | currency }}</span>
+        </div>
       </div>
-    }
-  </label>
+    </div>
+  </div>
+</div>
 
-  <label
-  >Date:
-    <input type="date" [formField]="expenseForm.expenseDate" />
-    @if (expenseForm.expenseDate().dirty() && expenseForm.expenseDate().invalid()) {
-      <div class="errors">
-        @for (error of expenseForm.expenseDate().errors(); track error.kind) {
-          <p>{{ error.message }}</p>
-        }
-      </div>
-    }
-  </label>
-
-  <label
-  >Description:
-    <input type="text" [formField]="expenseForm.description" />
-  </label>
-
-  <button type="submit" [disabled]="!expenseForm().valid() || expenseForm().submitting()">
-    @if (expenseForm().submitting()) {
-      Saving...
-    } @else {
-      Save
-    }
-  </button>
-</form>
+<div class="card shadow-sm mt-4">
+  <div class="card-body d-flex gap-3 p-4">
+    <span class="tips-icon bg-primary-subtle text-primary">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M9 18h6" />
+        <path d="M10 22h4" />
+        <path d="M12 2a7 7 0 0 0-4 12.7c.6.5 1 1.3 1 2.3h6c0-1 .4-1.8 1-2.3A7 7 0 0 0 12 2z" />
+      </svg>
+    </span>
+    <div>
+      <div class="fw-semibold">Tips</div>
+      <p class="text-body-secondary small mb-0">
+        Be specific with your description and use categories consistently to get better insights into
+        your spending habits.
+      </p>
+    </div>
+  </div>
+</div>

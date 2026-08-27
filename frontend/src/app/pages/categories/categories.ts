@@ -4,10 +4,11 @@ import { CategoryService } from '../../services/category.service';
 import {  mergeMap, ReplaySubject } from 'rxjs';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { CategoryRequest } from '../../models/category';
+import { Spinner } from '../../shared/spinner/spinner';
 
 @Component({
   selector: 'app-categories',
-  imports: [RouterLink],
+  imports: [RouterLink, Spinner],
   templateUrl: './categories.html',
   styleUrl: './categories.css'
 })
