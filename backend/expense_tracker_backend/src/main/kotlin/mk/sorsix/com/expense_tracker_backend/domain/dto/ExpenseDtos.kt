@@ -8,7 +8,8 @@ data class CreateExpenseRequest(
     val amount: BigDecimal,
     val expenseDate: LocalDate,
     val description: String? = null,
-    val planId: Long? = null
+    val planId: Long? = null,
+    val confirmOverBudget: Boolean? = false
 )
 
 data class UpdateExpenseRequest(
@@ -16,7 +17,8 @@ data class UpdateExpenseRequest(
     val amount: BigDecimal,
     val expenseDate: LocalDate,
     val description: String? = null,
-    val planId: Long? = null
+    val planId: Long? = null,
+    val confirmOverBudget: Boolean? = false
 )
 
 data class ExpenseResponse(

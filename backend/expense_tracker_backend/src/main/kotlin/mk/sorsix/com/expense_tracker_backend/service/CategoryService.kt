@@ -22,6 +22,19 @@ class CategoryService(
 
     fun findCategoryById(id: Long): Category? = categoryRepository.findByIdOrNull(id)
 
+    fun rootOf(category: Category, byId: Map<Long, Category>): Category {
+        var current = category
+        val seen = mutableSetOf(current.id)
+        while (true) {
+            val parentId = current.parentCategory?.id ?: return current
+            if (!seen.add(parentId)) return current
+            current = byId[parentId] ?: return current
+        }
+    }
+
+    fun categoriesById(userId: Long): Map<Long, Category> =
+        categoryRepository.findByUserIsNullOrUserId(userId).associateBy { it.id }
+
     fun listAllCategories(user: User): List<CategoryResponse> =
         categoryRepository.findByUserIsNullOrUserId(user.id).map { it.toResponse() }
 

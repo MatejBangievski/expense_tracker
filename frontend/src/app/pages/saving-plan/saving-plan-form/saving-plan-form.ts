@@ -1,8 +1,9 @@
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { CurrencyPipe } from '@angular/common';
+import { HttpErrorResponse } from '@angular/common/http';
 import { form, FormField, FormRoot, min } from '@angular/forms/signals';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
-import { firstValueFrom, map, mergeMap, of } from 'rxjs';
+import { firstValueFrom, forkJoin } from 'rxjs';
 import { CategoryService } from '../../../services/category.service';
 import { SavingPlanService } from '../../../services/saving-plan.service';
 import { Category } from '../../../models/category';
@@ -11,6 +12,7 @@ import { ManualSavingPlanRequest, SavingPlan } from '../../../models/saving-plan
 interface LimitRow {
   categoryName: string;
   suggestedLimit: number;
+  minLimit: number;
 }
 
 @Component({
@@ -40,6 +42,7 @@ export class SavingPlanForm implements OnInit {
 
   totalAllocated = computed(() => this.rows().reduce((sum, r) => sum + r.suggestedLimit, 0));
   remaining = computed(() => this.budgetModel().budgetLimit - this.totalAllocated());
+  totalSpent = computed(() => this.rows().reduce((sum, r) => sum + r.minLimit, 0));
 
   budgetModel = signal<{ budgetLimit: number }>({ budgetLimit: 0 });
 
@@ -54,14 +57,15 @@ export class SavingPlanForm implements OnInit {
           this.errorMessage.set('');
           const request: ManualSavingPlanRequest = {
             budgetLimit: form().value().budgetLimit,
-            categoryLimits: this.rows(),
+            categoryLimits: this.rows().map((r) => ({ categoryName: r.categoryName, suggestedLimit: r.suggestedLimit })),
           };
-
           try {
             await firstValueFrom(this.savingPlanService.createManual(request));
             await this.router.navigate(['/saving-plan']);
-          } catch {
-            this.errorMessage.set('Could not save the plan. Please try again.');
+          } catch (err) {
+            this.errorMessage.set(
+              (err as HttpErrorResponse)?.error?.error ?? 'Could not save the plan. Please try again.',
+            );
           }
         },
       },
@@ -71,22 +75,45 @@ export class SavingPlanForm implements OnInit {
   ngOnInit(): void {
     this.categoryService
       .getCategories()
-      .subscribe((categories) => this.categories.set(categories.filter((c) => c.parentCategoryId === null)));
+      .subscribe((cats) => this.categories.set(cats.filter((c) => c.parentCategoryId === null)));
 
-    this.route.data
-      .pipe(
-        map((data) => data['edit'] === true),
-        mergeMap((editing) => (editing ? this.savingPlanService.getCurrentPlan() : of(undefined))),
-      )
-      .subscribe((plan) => {
-        if (plan) {
-          this.budgetModel.set({ budgetLimit: plan.totalBudgetLimit });
-          this.rows.set(
-            plan.categoryLimits.map((cl) => ({ categoryName: cl.categoryName, suggestedLimit: cl.monthlyLimit })),
-          );
-          this.plan = plan;
+    if (this.editing) {
+      forkJoin({
+        plan: this.savingPlanService.getCurrentPlan(),
+        spending: this.savingPlanService.getCurrentSpending(),
+      }).subscribe(({ plan, spending }) => {
+        if (!plan) {
+          return;
         }
+        this.plan = plan;
+        const liveSpentByName = new Map(spending.categories.map((c) => [c.categoryName, c.totalAmount]));
+        const rows: LimitRow[] = plan.categoryLimits.map((cl) => {
+          const liveSpent = liveSpentByName.get(cl.categoryName) ?? 0;
+          liveSpentByName.delete(cl.categoryName);
+          return {
+            categoryName: cl.categoryName,
+            suggestedLimit: Math.max(cl.monthlyLimit, liveSpent),
+            minLimit: liveSpent,
+          };
+        });
+        for (const [categoryName, spent] of liveSpentByName) {
+          if (spent > 0) {
+            rows.push({ categoryName, suggestedLimit: spent, minLimit: spent });
+          }
+        }
+        this.rows.set(rows);
+        this.budgetModel.set({ budgetLimit: Math.max(plan.totalBudgetLimit, spending.totalSpent) });
       });
+    } else {
+      this.savingPlanService.getCurrentSpending().subscribe((spending) => {
+        this.rows.set(
+          spending.categories
+            .filter((c) => c.totalAmount > 0)
+            .map((c) => ({ categoryName: c.categoryName, suggestedLimit: c.totalAmount, minLimit: c.totalAmount })),
+        );
+        this.budgetModel.set({ budgetLimit: spending.totalSpent });
+      });
+    }
   }
 
   addSelectedCategory(): void {
@@ -94,12 +121,17 @@ export class SavingPlanForm implements OnInit {
     if (!name || this.rows().some((r) => r.categoryName === name)) {
       return;
     }
-    this.rows.update((rows) => [...rows, { categoryName: name, suggestedLimit: 0 }]);
+    this.rows.update((rows) => [...rows, { categoryName: name, suggestedLimit: 0, minLimit: 0 }]);
     this.selectedCategory.set('');
   }
 
   removeRow(index: number): void {
-    this.rows.update((rows) => rows.filter((_, i) => i !== index));
+    this.rows.update((rows) => {
+      if ((rows[index]?.minLimit ?? 0) > 0) {
+        return rows;
+      }
+      return rows.filter((_, i) => i !== index);
+    });
   }
 
   changeLimit(index: number, delta: number): void {
@@ -109,7 +141,7 @@ export class SavingPlanForm implements OnInit {
 
       const add = delta > 0 ? Math.max(0, Math.min(delta, remaining)) : delta;
       return rows.map((row, i) =>
-        i === index ? { ...row, suggestedLimit: Math.max(0, row.suggestedLimit + add) } : row,
+        i === index ? { ...row, suggestedLimit: Math.max(row.minLimit, row.suggestedLimit + add) } : row,
       );
     });
   }
@@ -117,11 +149,12 @@ export class SavingPlanForm implements OnInit {
   setLimit(index: number, value: number): void {
     const budget = this.budgetModel().budgetLimit;
     this.rows.update((rows) => {
+      const row = rows[index];
       const sumOthers = rows.reduce((sum, r, i) => (i === index ? sum : sum + r.suggestedLimit), 0);
-      const maxForRow = Math.max(0, budget - sumOthers);
-      const raw = Number.isFinite(value) ? Math.max(0, value) : 0;
+      const maxForRow = Math.max(row.minLimit, budget - sumOthers);
+      const raw = Number.isFinite(value) ? Math.max(row.minLimit, value) : row.minLimit;
       const safe = Math.min(raw, maxForRow);
-      return rows.map((row, i) => (i === index ? { ...row, suggestedLimit: safe } : row));
+      return rows.map((r, i) => (i === index ? { ...r, suggestedLimit: safe } : r));
     });
   }
 }

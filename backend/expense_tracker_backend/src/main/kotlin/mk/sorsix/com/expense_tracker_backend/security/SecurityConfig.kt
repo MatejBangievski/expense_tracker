@@ -33,6 +33,7 @@ class SecurityConfig(
                     .requestMatchers("/api/users/**").authenticated()
                     .requestMatchers("/api/monthly-saving-plan/**").authenticated()
                     .requestMatchers("/api/period-comparisons/**").authenticated()
+                    .requestMatchers("/api/period-summaries/**").authenticated()
                     .anyRequest().permitAll()
             }
             .exceptionHandling {

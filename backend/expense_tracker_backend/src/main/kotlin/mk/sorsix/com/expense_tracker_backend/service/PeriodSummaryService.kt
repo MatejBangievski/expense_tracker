@@ -1,16 +1,20 @@
 package mk.sorsix.com.expense_tracker_backend.service
 
+import mk.sorsix.com.expense_tracker_backend.domain.AvailablePeriodsResult
 import mk.sorsix.com.expense_tracker_backend.domain.Category
+import mk.sorsix.com.expense_tracker_backend.domain.CurrentSpendingResult
 import mk.sorsix.com.expense_tracker_backend.domain.FindPeriodSummaryResult
 import mk.sorsix.com.expense_tracker_backend.domain.GeneratePeriodSummaryResult
 import mk.sorsix.com.expense_tracker_backend.domain.PeriodSummary
 import mk.sorsix.com.expense_tracker_backend.domain.PeriodSummaryCategory
 import mk.sorsix.com.expense_tracker_backend.domain.PeriodType
+import mk.sorsix.com.expense_tracker_backend.domain.dto.AvailablePeriod
 import mk.sorsix.com.expense_tracker_backend.domain.dto.CategorySummaryResponse
 import mk.sorsix.com.expense_tracker_backend.domain.dto.PeriodSummaryResponse
 import mk.sorsix.com.expense_tracker_backend.domain.dto.SubCategorySummaryResponse
 import mk.sorsix.com.expense_tracker_backend.repository.CategoryRepository
 import mk.sorsix.com.expense_tracker_backend.repository.ExpenseRepository
+import mk.sorsix.com.expense_tracker_backend.repository.ExpenseSpecifications
 import mk.sorsix.com.expense_tracker_backend.repository.PeriodSummaryCategoryRepository
 import mk.sorsix.com.expense_tracker_backend.repository.PeriodSummaryRepository
 import mk.sorsix.com.expense_tracker_backend.repository.UserRepository
@@ -25,6 +29,7 @@ import java.time.LocalDate
 class PeriodSummaryService(
     private val expenseRepository: ExpenseRepository,
     private val categoryRepository: CategoryRepository,
+    private val categoryService: CategoryService,
     private val userRepository: UserRepository,
     private val periodSummaryRepository: PeriodSummaryRepository,
     private val periodSummaryCategoryRepository: PeriodSummaryCategoryRepository,
@@ -78,7 +83,9 @@ class PeriodSummaryService(
             expenseRepository.deactivateByUserAndDateRange(userId, periodStart, periodEnd)
         }
 
-        return GeneratePeriodSummaryResult.Success(toResponse(summary, subCategories, categoriesById))
+        return GeneratePeriodSummaryResult.Success(
+            buildResponse(summary.id, userId, periodType, periodStart, income, totalSpent, subCategories, categoriesById),
+        )
     }
 
     @Transactional(readOnly = true)
@@ -86,16 +93,56 @@ class PeriodSummaryService(
         val periodStart = periodType.startOf(date)
         val summary = periodSummaryRepository.findByUserIdAndPeriodTypeAndPeriodStart(userId, periodType, periodStart)
             ?: return FindPeriodSummaryResult.SummaryNotFound
-        val categoriesById = categoryRepository.findByUserIsNullOrUserId(userId).associateBy { it.id }
+        val categoriesById = categoryService.categoriesById(userId)
         val subCategories = periodSummaryCategoryRepository.findAllWithCategoryBySummaryId(summary.id)
             .map { subCategorySpend(it.category.id, it.totalAmount, it.expenseCount) }
-        return FindPeriodSummaryResult.Success(toResponse(summary, subCategories, categoriesById))
+        return FindPeriodSummaryResult.Success(
+            buildResponse(
+                summary.id, summary.user.id, summary.periodType, summary.periodStart,
+                summary.totalIncome, summary.totalSpent, subCategories, categoriesById,
+            ),
+        )
     }
 
-    private fun toResponse(summary: PeriodSummary, subCategories: List<subCategorySpend>, categoriesById: Map<Long, Category>, ): PeriodSummaryResponse {
+    @Transactional(readOnly = true)
+    fun availablePeriods(userId: Long, periodType: PeriodType): AvailablePeriodsResult {
+        if (!userRepository.existsById(userId)) return AvailablePeriodsResult.UserNotFound
+        val periods = expenseRepository.findAll(ExpenseSpecifications.belongsToUser(userId))
+            .groupBy { periodType.startOf(it.expenseDate) }
+            .map { (periodStart, expenses) ->
+                AvailablePeriod(periodStart, expenses.fold(BigDecimal.ZERO) { acc, e -> acc + e.amount })
+            }
+            .sortedByDescending { it.periodStart }
+        return AvailablePeriodsResult.Success(periods)
+    }
+
+    @Transactional(readOnly = true)
+    fun currentSpending(userId: Long): CurrentSpendingResult {
+        if (!userRepository.existsById(userId)) return CurrentSpendingResult.UserNotFound
+        return CurrentSpendingResult.Success(currentMonthSpending(userId))
+    }
+
+    @Transactional(readOnly = true)
+    fun currentMonthSpending(userId: Long): PeriodSummaryResponse {
+        val periodStart = PeriodType.MONTH.startOf(LocalDate.now(clock))
+        val periodEnd = PeriodType.MONTH.endOf(periodStart)
+        val user = userRepository.findById(userId).orElse(null)
+            ?: return PeriodSummaryResponse(0, userId, PeriodType.MONTH, periodStart, null, BigDecimal.ZERO, emptyList())
+
+        val subCategories = expenseRepository.findByUserIdAndExpenseDateBetween(userId, periodStart, periodEnd)
+            .groupBy { it.category }
+            .map { (category, expenses) ->
+                subCategorySpend(category.id, expenses.fold(BigDecimal.ZERO) { acc, e -> acc + e.amount }, expenses.size)
+            }
+        val totalSpent = subCategories.fold(BigDecimal.ZERO) { acc, sc -> acc + sc.totalAmount }
+        val categoriesById = categoryService.categoriesById(userId)
+        return buildResponse(0, userId, PeriodType.MONTH, periodStart, user.monthlySalary, totalSpent, subCategories, categoriesById)
+    }
+
+    private fun buildResponse(summaryId: Long, userId: Long, periodType: PeriodType, periodStart: LocalDate, totalIncome: BigDecimal?, totalSpent: BigDecimal, subCategories: List<subCategorySpend>, categoriesById: Map<Long, Category>): PeriodSummaryResponse {
         val categories = subCategories
             .mapNotNull { subCategory -> categoriesById[subCategory.categoryId]?.let { it to subCategory } }
-            .groupBy { (category, _) -> rootOf(category, categoriesById) }
+            .groupBy { (category, _) -> categoryService.rootOf(category, categoriesById) }
             .map { (root, entries) ->
                 CategorySummaryResponse(
                     categoryId = root.id,
@@ -112,24 +159,14 @@ class PeriodSummaryService(
             .sortedByDescending { it.totalAmount }
 
         return PeriodSummaryResponse(
-            summaryId = summary.id,
-            userId = summary.user.id,
-            periodType = summary.periodType,
-            periodStart = summary.periodStart,
-            totalIncome = summary.totalIncome,
-            totalSpent = summary.totalSpent,
+            summaryId = summaryId,
+            userId = userId,
+            periodType = periodType,
+            periodStart = periodStart,
+            totalIncome = totalIncome,
+            totalSpent = totalSpent,
             categories = categories,
         )
-    }
-
-    private fun rootOf(subCategory: Category, categoriesById: Map<Long, Category>): Category {
-        var current = subCategory
-        val seen = mutableSetOf(current.id)
-        while (true) {
-            val parentId = current.parentCategory?.id ?: return current
-            if (!seen.add(parentId)) return current
-            current = categoriesById[parentId] ?: return current
-        }
     }
 }
 

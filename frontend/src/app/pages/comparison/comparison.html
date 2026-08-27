@@ -1,0 +1,156 @@
+<div class="d-flex justify-content-between align-items-start mb-4 flex-wrap gap-2">
+  <div>
+    <h1 class="h3 mb-1">Compare periods</h1>
+    <p class="text-body-secondary mb-0">See how your spending changed between two periods, by category.</p>
+  </div>
+</div>
+
+<div class="card shadow-sm mb-4">
+  <div class="card-body p-4">
+    <div class="mb-3">
+      <label for="periodType" class="form-label">Period type</label>
+      <select
+        id="periodType"
+        class="form-select"
+        [value]="periodType()"
+        (change)="onTypeChange($any($event.target).value)"
+      >
+        @for (type of periodTypes; track type) {
+          <option [value]="type">{{ type }}</option>
+        }
+      </select>
+    </div>
+
+    <div class="row g-3 mb-3">
+      <div class="col-md-6">
+        <label for="periodA" class="form-label">Period</label>
+        <select id="periodA" class="form-select" [value]="periodA()" (change)="periodA.set($any($event.target).value)">
+          @for (p of optionsA(); track p.periodStart) {
+            <option [value]="p.periodStart">{{ label(p.periodStart, periodType()) }} · {{ p.totalSpent | currency }}</option>
+          }
+        </select>
+      </div>
+      <div class="col-md-6">
+        <label for="periodB" class="form-label">Compare with</label>
+        <select id="periodB" class="form-select" [value]="periodB()" (change)="periodB.set($any($event.target).value)">
+          @for (p of optionsB(); track p.periodStart) {
+            <option [value]="p.periodStart">{{ label(p.periodStart, periodType()) }} · {{ p.totalSpent | currency }}</option>
+          }
+        </select>
+      </div>
+    </div>
+
+    @if (periods().length < 2) {
+      <p class="text-body-secondary small">Not enough periods with recorded spending to compare yet.</p>
+    }
+
+    <div class="form-check mb-3">
+      <input id="useAi" type="checkbox" class="form-check-input" [checked]="useAi()" [disabled]="!hasApiKey()" (change)="useAi.set($any($event.target).checked)" />
+      <label for="useAi" class="form-check-label">Use AI insight</label>
+      @if (!hasApiKey()) {
+        <div class="text-body-secondary small">AI insight needs a Gemini API key. <a routerLink="/profile">Add your API key from your profile</a>.</div>
+      }
+    </div>
+
+    @if (error()) {
+      <div class="alert alert-danger py-2">{{ error() }}</div>
+    }
+
+    <button type="button" class="btn btn-primary d-inline-flex align-items-center gap-2" (click)="compare()" [disabled]="loading() || periods().length < 2">
+      @if (loading()) {
+        <app-spinner />
+        Comparing…
+      } @else {
+        Compare
+      }
+    </button>
+  </div>
+</div>
+
+@if (result(); as r) {
+  <div class="card shadow-sm mb-4">
+    <div class="card-body p-4">
+      <div class="row g-3">
+        <div class="col-md-4">
+          <p class="text-body-secondary small mb-1">{{ label(r.previousPeriodStart, r.periodType) }}</p>
+          <p class="h5 mb-0">{{ r.previousTotalSpent | currency }}</p>
+        </div>
+        <div class="col-md-4">
+          <p class="text-body-secondary small mb-1">{{ label(r.currentPeriodStart, r.periodType) }}</p>
+          <p class="h5 mb-0">{{ r.currentTotalSpent | currency }}</p>
+        </div>
+        <div class="col-md-4">
+          <p class="text-body-secondary small mb-1">Change</p>
+          @let totalPct = percentChange(r.currentTotalSpent, r.previousTotalSpent);
+          <p class="h5 mb-0" [class.text-danger]="totalDelta() > 0" [class.text-success]="totalDelta() < 0">
+            {{ totalDelta() | currency }}
+            @if (totalPct !== null) {
+              ({{ totalPct > 0 ? '+' : '' }}{{ totalPct | number: '1.0-1' }}%)
+            } @else {
+              <span class="text-body-secondary">—</span>
+            }
+          </p>
+        </div>
+      </div>
+
+      @if (r.comparisonMessage) {
+        <div class="alert alert-info mt-3 mb-0">{{ r.comparisonMessage }}</div>
+      }
+    </div>
+  </div>
+
+  @if (r.categories.length > 0) {
+    <div class="card shadow-sm mb-4">
+      <div class="card-body p-4">
+        <h2 class="h6 text-body-secondary mb-3">Spending by category</h2>
+        <div [style.height.px]="chartHeight()">
+          <canvas
+            baseChart
+            type="bar"
+            role="img"
+            aria-label="Category spending compared between the two periods"
+            [data]="categoryChartData()"
+            [options]="categoryChartOptions"
+          ></canvas>
+        </div>
+      </div>
+    </div>
+  }
+
+  <h2 class="h6 text-body-secondary mb-2">By category</h2>
+  <div class="border rounded overflow-hidden">
+    <div class="table-responsive">
+      <table class="table table-hover align-middle mb-0">
+        <thead>
+          <tr>
+            <th>Category</th>
+            <th class="text-end">{{ label(r.previousPeriodStart, r.periodType) }}</th>
+            <th class="text-end">{{ label(r.currentPeriodStart, r.periodType) }}</th>
+            <th class="text-end">Change</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (cat of r.categories; track cat.categoryName) {
+            <tr>
+              <td>{{ cat.categoryName }}</td>
+              <td class="text-end">{{ cat.previousAmount | currency }}</td>
+              <td class="text-end">{{ cat.currentAmount | currency }}</td>
+              <td class="text-end">
+                @let pct = percentChange(cat.currentAmount, cat.previousAmount);
+                @if (pct === null) {
+                  <span class="text-body-secondary">—</span>
+                } @else {
+                  <span [class.text-danger]="pct > 0" [class.text-success]="pct < 0">
+                    {{ pct > 0 ? '+' : '' }}{{ pct | number: '1.0-1' }}%
+                  </span>
+                }
+              </td>
+            </tr>
+          } @empty {
+            <tr><td colspan="4" class="text-center text-body-secondary py-4">No category spending in either period.</td></tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  </div>
+}
