@@ -71,6 +71,9 @@ class ExpenseController(
 
             is CreateExpenseResult.PlanNotFound -> ResponseEntity.status(HttpStatus.BAD_REQUEST)
                 .body(mapOf("error" to "Plan not found"))
+
+            is CreateExpenseResult.OverBudgetWarning -> ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(mapOf("error" to "over_budget", "message" to result.message))
         }
 
     @PutMapping("/{id}")
@@ -95,6 +98,9 @@ class ExpenseController(
 
             is UpdateExpenseResult.PlanNotFound -> ResponseEntity.status(HttpStatus.BAD_REQUEST)
                 .body(mapOf("error" to "Plan not found"))
+
+            is UpdateExpenseResult.OverBudgetWarning -> ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(mapOf("error" to "over_budget", "message" to result.message))
         }
 
     @DeleteMapping("/{id}")

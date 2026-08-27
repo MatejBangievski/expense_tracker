@@ -25,3 +25,14 @@ export interface ManualSavingPlanRequest {
 export interface GenerateAiRequest {
   budgetLimit: number;
 }
+
+export interface CategorySpending {
+  categoryId: number;
+  categoryName: string;
+  totalAmount: number;
+}
+
+export interface CurrentSpending {
+  totalSpent: number;
+  categories: CategorySpending[];
+}

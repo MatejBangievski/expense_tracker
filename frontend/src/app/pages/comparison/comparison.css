@@ -1,0 +1,21 @@
+.card {
+  border-radius: 0.75rem;
+  border: 1px solid #e5e7eb;
+}
+
+.comparison-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.comparison-table th,
+.comparison-table td {
+  padding: 0.5rem 0.75rem;
+  border-bottom: 1px solid #f0f0f0;
+  text-align: left;
+}
+
+.comparison-table th.num,
+.comparison-table td.num {
+  text-align: right;
+}

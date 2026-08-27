@@ -36,3 +36,9 @@
   width: 6rem;
   text-align: right;
 }
+
+.limit-spent {
+  width: 7rem;
+  text-align: right;
+  white-space: nowrap;
+}

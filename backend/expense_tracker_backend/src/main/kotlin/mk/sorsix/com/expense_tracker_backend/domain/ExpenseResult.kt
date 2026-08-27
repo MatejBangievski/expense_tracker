@@ -6,6 +6,7 @@ sealed class CreateExpenseResult {
     data class Success(val expense: ExpenseResponse) : CreateExpenseResult()
     object CategoryNotFound : CreateExpenseResult()
     object PlanNotFound : CreateExpenseResult()
+    data class OverBudgetWarning(val message: String) : CreateExpenseResult()
 }
 
 sealed class UpdateExpenseResult {
@@ -15,6 +16,7 @@ sealed class UpdateExpenseResult {
     object NotOwner : UpdateExpenseResult()
     object ExpenseLocked : UpdateExpenseResult()
     object PlanNotFound : UpdateExpenseResult()
+    data class OverBudgetWarning(val message: String) : UpdateExpenseResult()
 }
 
 sealed class DeleteExpenseResult {

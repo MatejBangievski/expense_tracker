@@ -45,6 +45,10 @@
     <input type="text" [formField]="expenseForm.description" />
   </label>
 
+  @if (errorMessage()) {
+    <div class="errors"><p>{{ errorMessage() }}</p></div>
+  }
+
   <button type="submit" [disabled]="!expenseForm().valid() || expenseForm().submitting()">
     @if (expenseForm().submitting()) {
       Saving...

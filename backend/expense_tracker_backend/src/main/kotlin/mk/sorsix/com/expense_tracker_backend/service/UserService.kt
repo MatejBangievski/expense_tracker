@@ -7,9 +7,12 @@ import mk.sorsix.com.expense_tracker_backend.domain.dto.ChangePasswordResult
 import mk.sorsix.com.expense_tracker_backend.domain.dto.UpdateUserRequest
 import mk.sorsix.com.expense_tracker_backend.domain.dto.UpdateUserResult
 import mk.sorsix.com.expense_tracker_backend.domain.dto.UserResponse
+import mk.sorsix.com.expense_tracker_backend.repository.MonthlySavingRepository
 import mk.sorsix.com.expense_tracker_backend.repository.UserRepository
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.stereotype.Service
+import java.time.Clock
+import java.time.LocalDate
 
 @Service
 class UserService(
@@ -17,6 +20,8 @@ class UserService(
     private val encryptionService: EncryptionService,
     private val userChatClientProvider: UserChatClientProvider,
     private val passwordEncoder: PasswordEncoder,
+    private val monthlySavingRepository: MonthlySavingRepository,
+    private val clock: Clock,
 ) {
 
     fun getProfile(user: User): UserResponse = user.toResponse()
@@ -56,6 +61,6 @@ class UserService(
         displayName = displayName,
         email = email,
         monthlySalary = monthlySalary,
-        totalSaved = totalSaved
+        totalSaved = monthlySavingRepository.sumTotalSavedBefore(id, LocalDate.now(clock).withDayOfMonth(1)),
     )
 }

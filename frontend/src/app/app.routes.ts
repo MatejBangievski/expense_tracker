@@ -9,6 +9,7 @@ import { Expenses } from './pages/expenses/expenses';
 import { ExpenseForm } from './pages/expenses/expense-form/expense-form';
 import { SavingPlan } from './pages/saving-plan/saving-plan';
 import { SavingPlanForm } from './pages/saving-plan/saving-plan-form/saving-plan-form';
+import { Comparison } from './pages/comparison/comparison';
 import { Plans } from './pages/plans/plans';
 import { PlanForm } from './pages/plans/plan-form/plan-form';
 import { PlanDetail } from './pages/plans/plan-detail/plan-detail';
@@ -31,6 +32,7 @@ export const routes: Routes = [
   { path: 'saving-plan', component: SavingPlan, canActivate: [authGuard] },
   { path: 'saving-plan/create', component: SavingPlanForm, canActivate: [authGuard] },
   { path: 'saving-plan/edit', component: SavingPlanForm, data: { edit: true }, canActivate: [authGuard] },
+  { path: 'comparison', component: Comparison, canActivate: [authGuard] },
   { path: '', pathMatch: 'full', redirectTo: '/dashboard' },
   { path: '**', redirectTo: '/dashboard' }
 ];

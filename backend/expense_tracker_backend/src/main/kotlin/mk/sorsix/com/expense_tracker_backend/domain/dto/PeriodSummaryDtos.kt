@@ -15,6 +15,11 @@ data class PeriodSummaryResponse(
     val categories: List<CategorySummaryResponse> = emptyList(),
 )
 
+data class AvailablePeriod(
+    val periodStart: LocalDate,
+    val totalSpent: BigDecimal,
+)
+
 data class CategorySummaryResponse(
     val categoryId: Long,
     val categoryName: String,

@@ -2,7 +2,7 @@ import { HttpClient } from '@angular/common/http';
 import { inject, Service } from '@angular/core';
 import { Observable, catchError, map, of } from 'rxjs';
 import { Result } from '../models/result';
-import { GenerateAiRequest, ManualSavingPlanRequest, SavingPlan } from '../models/saving-plan';
+import { CurrentSpending, GenerateAiRequest, ManualSavingPlanRequest, SavingPlan } from '../models/saving-plan';
 
 @Service()
 export class SavingPlanService {
@@ -18,6 +18,10 @@ export class SavingPlanService {
     return this.getCurrentPlan().pipe(
       map((data) => ({ data, loading: false }))
     );
+  }
+
+  getCurrentSpending(): Observable<CurrentSpending> {
+    return this.http.get<CurrentSpending>(`/api/period-summaries/current`);
   }
 
   createManual(request: ManualSavingPlanRequest): Observable<SavingPlan> {

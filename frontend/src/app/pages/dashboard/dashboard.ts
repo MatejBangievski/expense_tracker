@@ -5,6 +5,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { ReplaySubject, mergeMap } from 'rxjs';
 import { AuthService } from '../../services/auth.service';
 import { UserService } from '../../services/user.service';
+import { ComparisonService } from '../../services/comparison.service';
 import { Router } from '@angular/router';
 import { CurrencyPipe } from '@angular/common';
 
@@ -27,7 +28,12 @@ interface PasswordForm {
 export class Dashboard implements OnInit {
   userService = inject(UserService);
   authService = inject(AuthService);
+  comparisonService = inject(ComparisonService);
   router = inject(Router);
+
+  hasPreviousMonth = signal(false);
+  private readonly thisMonthStart = this.monthStart(0);
+  private readonly prevMonthStart = this.monthStart(-1);
 
   reload$ = new ReplaySubject<void>();
 
@@ -95,6 +101,21 @@ export class Dashboard implements OnInit {
   ngOnInit(): void {
     this.reload$.next();
     this.loadApiKey();
+    this.comparisonService.availablePeriods('MONTH').subscribe((periods) => {
+      this.hasPreviousMonth.set(periods.some((p) => p.periodStart === this.prevMonthStart));
+    });
+  }
+
+  compareWithPreviousMonth(): void {
+    this.router.navigate(['/comparison'], {
+      queryParams: { type: 'MONTH', current: this.thisMonthStart, previous: this.prevMonthStart, run: 1 },
+    });
+  }
+
+  private monthStart(offset: number): string {
+    const now = new Date();
+    const d = new Date(now.getFullYear(), now.getMonth() + offset, 1);
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-01`;
   }
 
   onEdit(currentUser: { displayName: string; monthlySalary: number }) {

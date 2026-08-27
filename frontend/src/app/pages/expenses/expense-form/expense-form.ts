@@ -1,5 +1,6 @@
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { form, FormField, FormRoot, min, required } from '@angular/forms/signals';
+import { HttpErrorResponse } from '@angular/common/http';
 import { ExpenseService } from '../../../services/expense.service';
 import { CategoryService } from '../../../services/category.service';
 import { firstValueFrom, map, mergeMap, of } from 'rxjs';
@@ -25,6 +26,7 @@ export class ExpenseForm implements OnInit {
   expense: Expense | undefined;
   categories = signal<Category[]>([]);
   plans = signal<Plan[]>([]);
+  errorMessage = signal('');
 
   expenseModel = signal<ExpenseFormModel>({
     categoryId: '0',
@@ -43,27 +45,42 @@ export class ExpenseForm implements OnInit {
     {
       submission: {
         action: async (form) => {
+          this.errorMessage.set('');
           const value = form().value();
-          const request = {
-            categoryId: +value.categoryId,
-            amount: value.amount,
-            expenseDate: value.expenseDate,
-            description: value.description,
-          };
-
-          let result;
-          if (this.expense) {
-            result = await firstValueFrom(this.service.update(this.expense.id, request));
-          } else {
-            result = await firstValueFrom(this.service.save(request));
-          }
-          console.log('result', result);
-          this.router.navigate(['/expenses']);
-          return;
+          await this.submit(
+            {
+              categoryId: +value.categoryId,
+              amount: value.amount,
+              expenseDate: value.expenseDate,
+              description: value.description,
+            },
+            false,
+          );
         },
       },
     },
   );
+
+  private async submit(request: { categoryId: number; amount: number; expenseDate: string; description: string }, confirmOverBudget: boolean,): Promise<void> {
+    const body = { ...request, confirmOverBudget };
+    try {
+      if (this.expense) {
+        await firstValueFrom(this.service.update(this.expense.id, body));
+      } else {
+        await firstValueFrom(this.service.save(body));
+      }
+      this.router.navigate(['/expenses']);
+    } catch (err) {
+      const e = err as HttpErrorResponse;
+      if (e?.status === 409 && e.error?.error === 'over_budget') {
+        if (confirm(e.error.message ?? 'This expense exceeds your saving plan. Add it anyway?')) {
+          await this.submit(request, true);
+        }
+        return;
+      }
+      this.errorMessage.set(e?.error?.error ?? 'Could not save the expense. Please try again.');
+    }
+  }
 
   ngOnInit(): void {
     this.categoryService.getCategories().subscribe((categories) => this.categories.set(categories));

@@ -1,15 +1,15 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { ReplaySubject, mergeMap } from 'rxjs';
 import { RouterLink } from '@angular/router';
-import { CurrencyPipe } from '@angular/common';
+import { CurrencyPipe, DatePipe } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { SavingPlanService } from '../../services/saving-plan.service';
 import { UserService } from '../../services/user.service';
 
 @Component({
   selector: 'app-saving-plan',
-  imports: [RouterLink, CurrencyPipe],
+  imports: [RouterLink, CurrencyPipe, DatePipe],
   templateUrl: './saving-plan.html',
   styleUrl: './saving-plan.css',
 })
@@ -30,9 +30,17 @@ export class SavingPlan implements OnInit {
   aiError = signal('');
   aiLoading = signal(false);
 
+  readonly percentageIncrease = 10;
+  currentSpent = signal(0);
+  minAiBudget = computed(() => Math.ceil(this.currentSpent() * (1 + this.percentageIncrease / 100) * 100) / 100,);
+
   ngOnInit(): void {
     this.reload$.next();
     this.userService.getApiKey().subscribe((key) => this.hasApiKey.set(key !== null));
+    this.savingPlanService.getCurrentSpending().subscribe((spending) => {
+      this.currentSpent.set(spending.totalSpent);
+      this.aiBudget.set(this.minAiBudget());
+    });
   }
 
   generateAi(): void {
@@ -47,7 +55,7 @@ export class SavingPlan implements OnInit {
       error: (err: HttpErrorResponse) => {
         this.aiLoading.set(false);
         if (err.status === 422) {
-          this.aiError.set('No spending recorded yet this month — add expenses first.');
+          this.aiError.set(err.error?.error ?? 'Could not generate a plan.');
         } else if (err.status === 503) {
           this.aiError.set('The AI service is unavailable. Please try again.');
         } else {

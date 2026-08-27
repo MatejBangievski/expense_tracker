@@ -27,35 +27,31 @@ class MonthlySavingController(
         monthlySavingService.getCurrentPlan(currentUserProvider.resolve(userDetails))
             ?.let { ResponseEntity.ok(it) }
             ?: ResponseEntity.status(HttpStatus.NOT_FOUND)
-                .body(mapOf("error" to "No saving plan for the upcoming month"))
+                .body(mapOf("error" to "No saving plan for this month"))
 
     @PostMapping
     fun createManual(
         @AuthenticationPrincipal userDetails: UserDetails,
         @RequestBody request: ManualSavingPlanRequest,
     ): ResponseEntity<*> =
-        when (val result = monthlySavingService.createManualPlan(currentUserProvider.resolve(userDetails), request)) {
-            is GenerateMonthlySavingPlanResult.Success -> ResponseEntity.ok(result.savingPlan)
-            is GenerateMonthlySavingPlanResult.InsufficientData -> ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY)
-                .body(mapOf("error" to result.message))
-            is GenerateMonthlySavingPlanResult.AiUnavailable -> ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
-                .body(mapOf("error" to "The recommendation service is unavailable, please try again"))
-        }
+        monthlySavingService.createManualPlan(currentUserProvider.resolve(userDetails), request).toResponse()
 
     @PostMapping("/ai")
     fun generate(
         @AuthenticationPrincipal userDetails: UserDetails,
         @RequestBody request: GenerateMonthlySavingPlanRequest,
     ): ResponseEntity<*> =
-        when (val result = monthlySavingService.generateWithAIAndPersist(
+        monthlySavingService.generateWithAIAndPersist(
             user = currentUserProvider.resolve(userDetails),
-            nextPeriodBudgetLimit = request.budgetLimit,
+            budgetLimit = request.budgetLimit,
             totalIncome = request.totalIncome,
-        )) {
-            is GenerateMonthlySavingPlanResult.Success -> ResponseEntity.ok(result.savingPlan)
-            is GenerateMonthlySavingPlanResult.InsufficientData -> ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY)
-                .body(mapOf("error" to result.message))
-            is GenerateMonthlySavingPlanResult.AiUnavailable -> ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
-                .body(mapOf("error" to "The recommendation service is unavailable, please try again"))
-        }
+        ).toResponse()
+
+    private fun GenerateMonthlySavingPlanResult.toResponse(): ResponseEntity<*> = when (this) {
+        is GenerateMonthlySavingPlanResult.Success -> ResponseEntity.ok(savingPlan)
+        is GenerateMonthlySavingPlanResult.InsufficientData -> ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY)
+            .body(mapOf("error" to message))
+        is GenerateMonthlySavingPlanResult.AiUnavailable -> ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
+            .body(mapOf("error" to "The recommendation service is unavailable, please try again"))
+    }
 }

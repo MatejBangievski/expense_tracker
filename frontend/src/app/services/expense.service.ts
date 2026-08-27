@@ -24,12 +24,12 @@ export class ExpenseService {
     return this.http.get<Expense>(`/api/expenses/${id}`);
   }
 
-  save(expense: { categoryId: number; amount: number; expenseDate: string; description: string }) {
-    return this.http.post(`/api/expenses`, expense);
+  save(expense: { categoryId: number; amount: number; expenseDate: string; description: string; confirmOverBudget?: boolean }) {
+    return this.http.post<Expense>(`/api/expenses`, expense);
   }
 
-  update(id: number, expense: { categoryId: number; amount: number; expenseDate: string; description: string }) {
-    return this.http.put(`/api/expenses/${id}`, expense);
+  update(id: number, expense: { categoryId: number; amount: number; expenseDate: string; description: string; confirmOverBudget?: boolean }) {
+    return this.http.put<Expense>(`/api/expenses/${id}`, expense);
   }
 
   deleteExpense(id: number) {
