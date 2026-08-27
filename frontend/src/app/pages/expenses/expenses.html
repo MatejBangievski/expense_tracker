@@ -1,44 +1,70 @@
-<h1>Expenses</h1>
-<a routerLink="/expenses/create">Add expense</a>
+<div class="container py-4">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h4 mb-0">Expenses</h1>
+    <a routerLink="/expenses/create" class="btn btn-primary btn-sm">Add expense</a>
+  </div>
 
-<div class="filters">
-  <input type="text" placeholder="Search expenses..." [formField]="filterForm.q" />
+  <div class="card shadow-sm mb-4">
+    <div class="card-body">
+      <div class="row g-2 align-items-center">
+        <div class="col-12 col-md">
+          <input type="text" class="form-control" placeholder="Search expenses..." [formField]="filterForm.q" />
+        </div>
 
-  <select [formField]="filterForm.categoryName">
-    <option value="">All categories</option>
-    @for (category of categories(); track category.id) {
-      <option [value]="category.name">{{ category.name }}</option>
-    }
-  </select>
+        <div class="col-12 col-md-auto">
+          <select class="form-select" [formField]="filterForm.categoryName">
+            <option value="">All categories</option>
+            @for (category of categories(); track category.id) {
+              <option [value]="category.name">{{ category.name }}</option>
+            }
+          </select>
+        </div>
 
-  <mat-form-field>
-    <input matInput [value]="dateRangeLabel()" placeholder="Select date range" readonly (click)="picker.open()" />
+        <div class="col-12 col-md-auto">
+          <mat-form-field appearance="outline" subscriptSizing="dynamic" class="filter-daterange">
+            <mat-label>Date range</mat-label>
+            <mat-date-range-input [rangePicker]="picker">
+              <input matStartDate placeholder="Start" readonly [value]="startDateValue()" (dateChange)="onStartDateChange($event)" (click)="picker.open()" />
+              <input matEndDate placeholder="End" readonly [value]="endDateValue()" (dateChange)="onEndDateChange($event)" (click)="picker.open()" />
+            </mat-date-range-input>
+            <mat-datepicker-toggle matIconSuffix [for]="picker"></mat-datepicker-toggle>
+            <mat-date-range-picker #picker></mat-date-range-picker>
+          </mat-form-field>
+        </div>
 
-    <mat-datepicker-toggle matIconSuffix [for]="picker"></mat-datepicker-toggle>
+        <div class="col-12 col-md-auto">
+          <button type="button" class="btn btn-outline-secondary" (click)="resetFilters()">Reset filters</button>
+        </div>
+      </div>
+    </div>
+  </div>
 
-    <mat-date-range-input [rangePicker]="picker" class="hidden-date-range">
-      <input matStartDate placeholder="Start date" [value]="startDateValue()" (dateChange)="onStartDateChange($event)" />
-      <input matEndDate placeholder="End date" [value]="endDateValue()" (dateChange)="onEndDateChange($event)" />
-    </mat-date-range-input>
-
-    <mat-date-range-picker #picker></mat-date-range-picker>
-  </mat-form-field>
-
-  <button type="button" (click)="resetFilters()">Reset filters</button>
+  @if (loading()) {
+    <app-spinner />
+  } @else {
+    <div class="border rounded overflow-hidden">
+      <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Category</th>
+              <th>Description</th>
+              <th class="text-end">Amount</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (expense of displayedExpenses(); track expense.id) {
+              <tr app-expense-row [expense]="expense" (deleted)="onDelete($event)"></tr>
+            } @empty {
+              <tr>
+                <td colspan="5" class="text-center text-body-secondary py-4">No expenses found.</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+  }
 </div>
-
-@if (isFiltering()) {
-  <ul class="expenses">
-    @for (expense of filterResult(); track expense.id) {
-      <app-expense-row [expense]="expense" (deleted)="onDelete($event)" />
-    }
-  </ul>
-} @else if (expenses().loading) {
-  <p>Loading...</p>
-} @else {
-  <ul class="expenses">
-    @for (expense of expenses().data; track expense.id) {
-      <app-expense-row [expense]="expense" (deleted)="onDelete($event)" />
-    }
-  </ul>
-}

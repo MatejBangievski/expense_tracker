@@ -12,8 +12,7 @@ interface LoginForm {
 @Component({
   selector: 'app-login',
   imports: [FormField, FormRoot, RouterLink],
-  templateUrl: './login.html',
-  styleUrl: './login.css'
+  templateUrl: './login.html'
 })
 export class Login {
   authService = inject(AuthService);
@@ -30,7 +29,7 @@ export class Login {
       action: async (loginForm) => {
         this.errorMessage.set('');
         this.authService.login(loginForm().value()).subscribe({
-          next: () => this.router.navigate(['/dashboard']),
+          next: () => this.router.navigate(['/home']),
           error: () => this.errorMessage.set('Invalid email or password'),
         });
       },

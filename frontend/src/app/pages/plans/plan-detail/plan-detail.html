@@ -1,53 +1,200 @@
-<a routerLink="/plans">Back to plans</a>
+<div class="container py-4">
+  <div class="d-flex justify-content-between align-items-start mb-4 flex-wrap gap-2">
+    <div>
+      <h1 class="h3 mb-1">{{ plan()?.name ?? 'Plan' }}</h1>
+      @if (plan(); as currentPlan) {
+        <p class="text-body-secondary mb-0">
+          {{ currentPlan.startDate | date: 'mediumDate' }} – {{ currentPlan.endDate | date: 'mediumDate' }}
+          · {{ currentPlan.totalPlanned | currency }} planned of {{ currentPlan.totalBudget | currency }}
+        </p>
+      }
+    </div>
+    <a routerLink="/plans" class="btn btn-outline-secondary btn-sm">← Back to plans</a>
+  </div>
 
-<h2>Planned items</h2>
-<ul class="items">
-  @for (item of items(); track item.id) {
-    <li>
-      <span class="date">{{ item.plannedDate }}</span>
-      <span class="category">{{ item.categoryName }}</span>
-      <span class="description">{{ item.description }}</span>
-      <span class="amount">{{ item.plannedAmount | currency }}</span>
-      <button type="button" (click)="onDeleteItem(item.id)">Delete</button>
-    </li>
-  }
-</ul>
+  <div class="card shadow-sm mb-4">
+    <div class="card-body p-4">
+      <h2 class="h5 mb-3">Planned items</h2>
 
-<form [formRoot]="newItemForm">
-  <select [formField]="newItemForm.categoryId">
-    <option value="0">No category</option>
-    @for (category of categories(); track category.id) {
-      <option [value]="category.id">{{ category.name }}</option>
-    }
-  </select>
-  <input type="text" placeholder="Description" [formField]="newItemForm.description" />
-  <input type="date" [formField]="newItemForm.plannedDate" />
-  <input type="number" step="0.01" placeholder="Amount" [formField]="newItemForm.plannedAmount" />
-  <button type="submit" [disabled]="!newItemForm().valid() || newItemForm().submitting()">Add item</button>
-</form>
+      <div class="border rounded overflow-hidden mb-4">
+        <div class="table-responsive">
+          <table class="table table-hover align-middle mb-0">
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Category</th>
+                <th>Description</th>
+                <th class="text-end">Amount</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (item of items(); track item.id) {
+                <tr>
+                  <td class="text-body-secondary">{{ item.plannedDate | date: 'mediumDate' }}</td>
+                  <td>{{ item.categoryName ?? '—' }}</td>
+                  <td>{{ item.description }}</td>
+                  <td class="text-end fw-medium">{{ item.plannedAmount | currency }}</td>
+                  <td class="text-end">
+                    <button type="button" class="btn btn-outline-danger btn-sm" (click)="onDeleteItem(item.id)">Delete</button>
+                  </td>
+                </tr>
+              } @empty {
+                <tr>
+                  <td colspan="5" class="text-center text-body-secondary py-4">No planned items yet.</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </div>
 
-@if (itemError()) {
-  <div class="error">{{ itemError() }}</div>
-}
+      <form [formRoot]="newItemForm" class="row g-2 align-items-start">
+        <div class="col-12 col-md-3">
+          <select class="form-select" aria-label="Category" [formField]="newItemForm.categoryId">
+            <option value="0">No category</option>
+            @for (category of categories(); track category.id) {
+              <option [value]="category.id">{{ category.name }}</option>
+            }
+          </select>
+        </div>
+        <div class="col-12 col-md">
+          <input
+            type="text"
+            class="form-control"
+            placeholder="Description"
+            [class.is-invalid]="newItemForm.description().dirty() && newItemForm.description().invalid()"
+            [formField]="newItemForm.description"
+          />
+          <div class="invalid-feedback">
+            @for (error of newItemForm.description().errors(); track error.kind) {
+              <div>{{ error.message }}</div>
+            }
+          </div>
+        </div>
+        <div class="col-6 col-md-2">
+          <input
+            type="date"
+            class="form-control"
+            aria-label="Planned date"
+            [class.is-invalid]="newItemForm.plannedDate().dirty() && newItemForm.plannedDate().invalid()"
+            [formField]="newItemForm.plannedDate"
+          />
+          <div class="invalid-feedback">
+            @for (error of newItemForm.plannedDate().errors(); track error.kind) {
+              <div>{{ error.message }}</div>
+            }
+          </div>
+        </div>
+        <div class="col-6 col-md-2">
+          <div class="input-group">
+            <span class="input-group-text">$</span>
+            <input
+              type="number"
+              step="0.01"
+              class="form-control"
+              aria-label="Planned amount"
+              [class.is-invalid]="newItemForm.plannedAmount().dirty() && newItemForm.plannedAmount().invalid()"
+              [formField]="newItemForm.plannedAmount"
+            />
+            <div class="invalid-feedback">
+              @for (error of newItemForm.plannedAmount().errors(); track error.kind) {
+                <div>{{ error.message }}</div>
+              }
+            </div>
+          </div>
+        </div>
+        <div class="col-12 col-md-auto">
+          <button type="submit" class="btn btn-primary w-100" [disabled]="!newItemForm().valid() || newItemForm().submitting()">
+            Add item
+          </button>
+        </div>
+      </form>
 
-<h2>Daily budget</h2>
-<ul class="daily-plans">
-  @for (dailyPlan of dailyPlans(); track dailyPlan.id) {
-    <li>
-      <span class="date">{{ dailyPlan.date }}</span>
-      <span class="allocated">{{ dailyPlan.allocatedAmount | currency }} allocated</span>
-      <span class="spent">{{ dailyPlan.actualSpent | currency }} spent</span>
-      <button type="button" (click)="onDeleteDailyPlan(dailyPlan.id)">Delete</button>
-    </li>
-  }
-</ul>
+      @if (itemError()) {
+        <div class="alert alert-danger py-2 mt-3 mb-0" role="alert">{{ itemError() }}</div>
+      }
+    </div>
+  </div>
 
-<form [formRoot]="newDailyPlanForm">
-  <input type="date" [formField]="newDailyPlanForm.date" />
-  <input type="number" step="0.01" placeholder="Allocated amount" [formField]="newDailyPlanForm.allocatedAmount" />
-  <button type="submit" [disabled]="!newDailyPlanForm().valid() || newDailyPlanForm().submitting()">Add day</button>
-</form>
+  <div class="card shadow-sm">
+    <div class="card-body p-4">
+      <h2 class="h5 mb-3">Daily budget</h2>
 
-@if (dailyPlanError()) {
-  <div class="error">{{ dailyPlanError() }}</div>
-}
+      <div class="border rounded overflow-hidden mb-4">
+        <div class="table-responsive">
+          <table class="table table-hover align-middle mb-0">
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th class="text-end">Allocated</th>
+                <th class="text-end">Spent</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (dailyPlan of dailyPlans(); track dailyPlan.id) {
+                <tr>
+                  <td class="text-body-secondary">{{ dailyPlan.date | date: 'mediumDate' }}</td>
+                  <td class="text-end fw-medium">{{ dailyPlan.allocatedAmount | currency }}</td>
+                  <td class="text-end">{{ dailyPlan.actualSpent | currency }}</td>
+                  <td class="text-end">
+                    <button type="button" class="btn btn-outline-danger btn-sm" (click)="onDeleteDailyPlan(dailyPlan.id)">Delete</button>
+                  </td>
+                </tr>
+              } @empty {
+                <tr>
+                  <td colspan="4" class="text-center text-body-secondary py-4">No daily allocations yet.</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <form [formRoot]="newDailyPlanForm" class="row g-2 align-items-start">
+        <div class="col-6 col-md-3">
+          <input
+            type="date"
+            class="form-control"
+            aria-label="Date"
+            [class.is-invalid]="newDailyPlanForm.date().dirty() && newDailyPlanForm.date().invalid()"
+            [formField]="newDailyPlanForm.date"
+          />
+          <div class="invalid-feedback">
+            @for (error of newDailyPlanForm.date().errors(); track error.kind) {
+              <div>{{ error.message }}</div>
+            }
+          </div>
+        </div>
+        <div class="col-6 col-md-3">
+          <div class="input-group">
+            <span class="input-group-text">$</span>
+            <input
+              type="number"
+              step="0.01"
+              class="form-control"
+              aria-label="Allocated amount"
+              [class.is-invalid]="newDailyPlanForm.allocatedAmount().dirty() && newDailyPlanForm.allocatedAmount().invalid()"
+              [formField]="newDailyPlanForm.allocatedAmount"
+            />
+            <div class="invalid-feedback">
+              @for (error of newDailyPlanForm.allocatedAmount().errors(); track error.kind) {
+                <div>{{ error.message }}</div>
+              }
+            </div>
+          </div>
+        </div>
+        <div class="col-12 col-md-auto">
+          <button type="submit" class="btn btn-primary w-100" [disabled]="!newDailyPlanForm().valid() || newDailyPlanForm().submitting()">
+            Add day
+          </button>
+        </div>
+      </form>
+
+      @if (dailyPlanError()) {
+        <div class="alert alert-danger py-2 mt-3 mb-0" role="alert">{{ dailyPlanError() }}</div>
+      }
+    </div>
+  </div>
+</div>

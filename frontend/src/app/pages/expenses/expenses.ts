@@ -1,5 +1,5 @@
 import { Component, computed, effect, inject, OnInit, signal } from '@angular/core';
-import { RouterLink } from '@angular/router';
+import { ActivatedRoute, RouterLink } from '@angular/router';
 import { toSignal, toObservable } from '@angular/core/rxjs-interop';
 import { form, FormField } from '@angular/forms/signals';
 import { ReplaySubject, debounceTime, distinctUntilChanged, mergeMap, of, switchMap } from 'rxjs';
@@ -8,7 +8,8 @@ import { Expense } from '../../models/expense';
 import { ExpenseRow } from './expense-row/expense-row';
 import { CategoryService } from '../../services/category.service';
 import { Category } from '../../models/category';
-import { MatFormField } from '@angular/material/form-field';
+import { Spinner } from '../../shared/spinner/spinner';
+import { MatFormField, MatLabel } from '@angular/material/form-field';
 import {
   MatDatepickerToggle,
   MatDateRangeInput,
@@ -31,7 +32,9 @@ interface ExpenseFilterForm {
     FormField,
     RouterLink,
     ExpenseRow,
+    Spinner,
     MatFormField,
+    MatLabel,
     MatDateRangeInput,
     MatDatepickerToggle,
     MatDateRangePicker,
@@ -44,6 +47,7 @@ interface ExpenseFilterForm {
 export class Expenses implements OnInit {
   service = inject(ExpenseService);
   categoryService = inject(CategoryService);
+  route = inject(ActivatedRoute);
 
   reload$ = new ReplaySubject<void>();
   expenses = toSignal(
@@ -62,10 +66,11 @@ export class Expenses implements OnInit {
   filterForm = form(this.filterModel);
   filterResult = signal<Expense[]>([]);
 
-  dateRangeLabel = computed(() => {
-    const { periodStart, periodEnd } = this.filterModel();
-    return periodStart && periodEnd ? `${periodStart} - ${periodEnd}` : '';
-  });
+  loading = computed(() => !this.isFiltering() && this.expenses().loading);
+
+  displayedExpenses = computed(() =>
+    this.isFiltering() ? this.filterResult() : (this.expenses().data ?? []),
+  );
 
   startDateValue = computed(() => {
     const { periodStart } = this.filterModel();
@@ -76,10 +81,6 @@ export class Expenses implements OnInit {
     const { periodEnd } = this.filterModel();
     return periodEnd ? new Date(periodEnd) : null;
   });
-
-  private isFilterActive(f: ExpenseFilterForm): boolean {
-    return Boolean(f.q || f.categoryName || (f.periodStart && f.periodEnd));
-  }
 
   onStartDateChange(event: MatDatepickerInputEvent<Date>) {
     const start = event.value;
@@ -102,6 +103,10 @@ export class Expenses implements OnInit {
     const month = String(date.getMonth() + 1).padStart(2, '0');
     const day = String(date.getDate()).padStart(2, '0');
     return `${year}-${month}-${day}`;
+  }
+
+  private isFilterActive(f: ExpenseFilterForm): boolean {
+    return Boolean(f.q || f.categoryName || (f.periodStart && f.periodEnd));
   }
 
   constructor() {
@@ -133,6 +138,11 @@ export class Expenses implements OnInit {
   ngOnInit(): void {
     this.reload$.next();
     this.categoryService.getCategories().subscribe((categories) => this.categories.set(categories));
+
+    const categoryName = this.route.snapshot.queryParamMap.get('categoryName');
+    if (categoryName) {
+      this.filterModel.update((f) => ({ ...f, categoryName }));
+    }
   }
 
   onDelete(id: number) {

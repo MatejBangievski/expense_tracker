@@ -5,38 +5,46 @@
   </div>
 
   @if (categories().loading) {
-    <p>Loading...</p>
+    <app-spinner />
   } @else if (categories().data; as categoryList) {
-    <table class="table">
-      <thead>
-      <tr>
-        <th>Name</th>
-        <th>Parent</th>
-        <th>Type</th>
-        <th></th>
-      </tr>
-      </thead>
-      <tbody>
-        @for (category of categoryList; track category.id) {
+    <div class="border rounded overflow-hidden">
+      <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+          <thead>
           <tr>
-            <td>{{ category.name }}</td>
-            <td>{{ category.parentCategoryName }}</td>
-            <td>
-              @if (category.default) {
-                <span class="badge text-bg-secondary">Default</span>
-              } @else {
-                <span class="badge text-bg-primary">Custom</span>
-              }
-            </td>
-            <td class="text-end">
-              @if (!category.default) {
-                <a [routerLink]="['/categories/edit', category.id]" class="btn btn-outline-secondary btn-sm">Edit</a>
-                <button type="button" class="btn btn-outline-danger btn-sm" (click)="onDelete(category.id)">Delete</button>
-              }
-            </td>
+            <th>Name</th>
+            <th>Parent</th>
+            <th>Type</th>
+            <th></th>
           </tr>
-        }
-      </tbody>
-    </table>
+          </thead>
+          <tbody>
+            @for (category of categoryList; track category.id) {
+              <tr>
+                <td class="fw-medium">{{ category.name }}</td>
+                <td class="text-body-secondary">{{ category.parentCategoryName }}</td>
+                <td>
+                  @if (category.default) {
+                    <span class="badge text-bg-secondary">Default</span>
+                  } @else {
+                    <span class="badge text-bg-primary">Custom</span>
+                  }
+                </td>
+                <td class="text-end text-nowrap">
+                  @if (!category.default) {
+                    <a [routerLink]="['/categories/edit', category.id]" class="btn btn-outline-secondary btn-sm me-1">Edit</a>
+                    <button type="button" class="btn btn-outline-danger btn-sm" (click)="onDelete(category.id)">Delete</button>
+                  }
+                </td>
+              </tr>
+            } @empty {
+              <tr>
+                <td colspan="4" class="text-center text-body-secondary py-4">No categories yet.</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
   }
 </div>

@@ -1,8 +1,8 @@
-<li>
-  <span class="date">{{ expense().expenseDate }}</span>
-  <span class="category">{{ expense().categoryName }}</span>
-  <span class="description">{{ expense().description }}</span>
-  <span class="amount">{{ expense().amount | currency }}</span>
-  <a [routerLink]="['/expenses/edit', expense().id]">Edit</a>
-  <button type="button" (click)="onDelete()">Delete</button>
-</li>
+<td class="text-body-secondary">{{ expense().expenseDate | date: 'mediumDate' }}</td>
+<td>{{ expense().categoryName }}</td>
+<td class="text-body-secondary">{{ expense().description }}</td>
+<td class="text-end fw-medium">{{ expense().amount | currency }}</td>
+<td class="text-end text-nowrap">
+  <a [routerLink]="['/expenses/edit', expense().id]" class="btn btn-outline-secondary btn-sm me-1">Edit</a>
+  <button type="button" class="btn btn-outline-danger btn-sm" (click)="onDelete()">Delete</button>
+</td>

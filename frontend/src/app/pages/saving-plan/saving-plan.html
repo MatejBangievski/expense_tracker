@@ -1,5 +1,5 @@
 @if (plan().loading) {
-  <p class="text-center mt-5">Loading…</p>
+  <app-spinner />
 } @else if (plan().data; as savingPlan) {
   <div class="container py-4">
     <div class="d-flex justify-content-between align-items-center mb-3">
@@ -63,7 +63,7 @@
 
     @if (!hasApiKey()) {
       <p class="text-secondary small">
-        AI generation needs a Gemini API key. <a routerLink="/dashboard">Add your API key from your dashboard</a>.
+        AI generation needs a Gemini API key. <a routerLink="/profile">Add your API key from your profile</a>.
       </p>
     }
 
@@ -81,8 +81,9 @@
         @if (aiError()) {
           <div class="alert alert-danger py-2">{{ aiError() }}</div>
         }
-        <button type="button" class="btn btn-primary" (click)="generateAi()" [disabled]="aiLoading()">
+        <button type="button" class="btn btn-primary d-inline-flex align-items-center gap-2" (click)="generateAi()" [disabled]="aiLoading()">
           @if (aiLoading()) {
+            <mat-progress-spinner mode="indeterminate" [diameter]="18" aria-label="Generating" />
             Generating…
           } @else {
             Generate

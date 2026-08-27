@@ -2,6 +2,7 @@ import { computed, inject, Service, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { AuthTokens, LoginRequest, RegisterRequest } from '../models/auth';
 import { catchError, of, tap } from 'rxjs';
+import { isJwtExpired } from './token';
 
 const ACCESS_TOKEN_KEY = 'accessToken';
 const REFRESH_TOKEN_KEY = 'refreshToken';
@@ -12,7 +13,10 @@ export class AuthService {
   accessToken = signal(localStorage.getItem(ACCESS_TOKEN_KEY));
   refreshToken = signal(localStorage.getItem(REFRESH_TOKEN_KEY));
 
-  isAuthenticated = computed(() => !!this.accessToken());
+  isAuthenticated = computed(() => {
+    const token = this.accessToken();
+    return !!token && !isJwtExpired(token);
+  });
 
   login(request: LoginRequest) {
     return this.http.post<AuthTokens>(`/api/auth/login`, request).pipe(

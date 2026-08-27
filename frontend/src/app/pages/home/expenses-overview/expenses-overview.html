@@ -1,0 +1,49 @@
+<div class="card shadow-sm h-100">
+  <div class="card-body p-4">
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+      <h2 class="h5 mb-0">Expenses Overview</h2>
+      <div class="btn-group btn-group-sm" role="group" aria-label="Period">
+        <button type="button" class="btn btn-outline-secondary" [class.active]="period() === 'weekly'" (click)="setPeriod('weekly')">Weekly</button>
+        <button type="button" class="btn btn-outline-secondary" [class.active]="period() === 'monthly'" (click)="setPeriod('monthly')">Monthly</button>
+        <button type="button" class="btn btn-outline-secondary" [class.active]="period() === 'yearly'" (click)="setPeriod('yearly')">Yearly</button>
+      </div>
+    </div>
+
+    @if (loading()) {
+      <app-spinner />
+    } @else if (segments().length === 0) {
+      <p class="text-body-secondary text-center py-5 mb-0">No expenses in this period.</p>
+    } @else {
+      <div class="row align-items-center g-4">
+        <div class="col-12 col-md-5">
+          <div class="chart-wrap">
+            <canvas baseChart type="doughnut" [data]="chartData()" [options]="chartOptions"></canvas>
+            <div class="chart-center">
+              <div class="fs-5 fw-semibold">{{ total() | currency }}</div>
+              <div class="text-body-secondary small">Total</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-12 col-md-7">
+          <ul class="list-unstyled mb-0">
+            @for (segment of segments(); track segment.name) {
+              <li>
+                <a
+                  class="legend-row d-flex align-items-center py-2 border-bottom text-decoration-none text-body"
+                  [routerLink]="segment.name === 'Others' ? null : ['/expenses']"
+                  [queryParams]="segment.name === 'Others' ? null : { categoryName: segment.name }"
+                >
+                  <span class="legend-dot me-2" [style.background-color]="segment.color"></span>
+                  <span class="flex-grow-1 text-truncate">{{ segment.name }}</span>
+                  <span class="fw-medium me-3">{{ segment.amount | currency }}</span>
+                  <span class="text-body-secondary small">{{ segment.share | percent: '1.1-1' }}</span>
+                </a>
+              </li>
+            }
+          </ul>
+        </div>
+      </div>
+    }
+  </div>
+</div>
