@@ -6,10 +6,13 @@ import { CurrencyPipe, DatePipe } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { SavingPlanService } from '../../services/saving-plan.service';
 import { UserService } from '../../services/user.service';
+import { MatProgressSpinner } from '@angular/material/progress-spinner';
+import { Spinner } from '../../shared/spinner/spinner';
+
 
 @Component({
   selector: 'app-saving-plan',
-  imports: [RouterLink, CurrencyPipe, DatePipe],
+  imports: [RouterLink, CurrencyPipe, MatProgressSpinner, Spinner, DatePipe],
   templateUrl: './saving-plan.html',
   styleUrl: './saving-plan.css',
 })
@@ -55,7 +58,7 @@ export class SavingPlan implements OnInit {
       error: (err: HttpErrorResponse) => {
         this.aiLoading.set(false);
         if (err.status === 422) {
-          this.aiError.set(err.error?.error ?? 'Could not generate a plan.');
+          this.aiError.set('No spending recorded yet this month — add expenses first.');
         } else if (err.status === 503) {
           this.aiError.set('The AI service is unavailable. Please try again.');
         } else {

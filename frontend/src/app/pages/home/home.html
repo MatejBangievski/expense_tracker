@@ -1,0 +1,12 @@
+<div class="container-fluid py-2">
+  <div class="mb-4">
+    <h1 class="h3 mb-1">{{ greeting() }}, {{ user()?.displayName }} 👋</h1>
+    <p class="text-body-secondary mb-0">Here's what's happening with your expenses.</p>
+  </div>
+
+  <div class="row g-4">
+    <div class="col-12 col-xl-8">
+      <app-expenses-overview />
+    </div>
+  </div>
+</div>

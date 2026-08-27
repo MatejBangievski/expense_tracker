@@ -1,18 +1,46 @@
-<h1>Plans</h1>
-<a routerLink="/plans/create">Add plan</a>
+<div class="container py-4">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h4 mb-0">Plans</h1>
+    <a routerLink="/plans/create" class="btn btn-primary btn-sm">Add plan</a>
+  </div>
 
-@if (plans().loading) {
-  <p>Loading...</p>
-} @else {
-  <ul class="plans">
-    @for (plan of plans().data; track plan.id) {
-      <li>
-        <a [routerLink]="['/plans', plan.id]">{{ plan.name }}</a>
-        <span class="dates">{{ plan.startDate }} – {{ plan.endDate }}</span>
-        <span class="budget">{{ plan.totalPlanned | currency }} / {{ plan.totalBudget | currency }}</span>
-        <a [routerLink]="['/plans/edit', plan.id]">Edit</a>
-        <button type="button" (click)="onDelete(plan.id)">Delete</button>
-      </li>
-    }
-  </ul>
-}
+  @if (plans().loading) {
+    <app-spinner />
+  } @else {
+    <div class="border rounded overflow-hidden">
+      <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Dates</th>
+              <th class="text-end">Spent / Budget</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (plan of plans().data; track plan.id) {
+              <tr>
+                <td>
+                  <a [routerLink]="['/plans', plan.id]" class="fw-medium text-decoration-none">{{ plan.name }}</a>
+                </td>
+                <td class="text-body-secondary">
+                  {{ plan.startDate | date: 'mediumDate' }} – {{ plan.endDate | date: 'mediumDate' }}
+                </td>
+                <td class="text-end">{{ plan.totalPlanned | currency }} / {{ plan.totalBudget | currency }}</td>
+                <td class="text-end text-nowrap">
+                  <a [routerLink]="['/plans/edit', plan.id]" class="btn btn-outline-secondary btn-sm me-1">Edit</a>
+                  <button type="button" class="btn btn-outline-danger btn-sm" (click)="onDelete(plan.id)">Delete</button>
+                </td>
+              </tr>
+            } @empty {
+              <tr>
+                <td colspan="4" class="text-center text-body-secondary py-4">No plans yet.</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+  }
+</div>

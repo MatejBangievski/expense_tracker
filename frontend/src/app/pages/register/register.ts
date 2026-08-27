@@ -14,8 +14,7 @@ interface RegisterForm {
 @Component({
   selector: 'app-register',
   imports: [FormField, FormRoot, RouterLink],
-  templateUrl: './register.html',
-  styleUrl: './register.css'
+  templateUrl: './register.html'
 })
 export class Register {
   authService = inject(AuthService);
@@ -41,11 +40,11 @@ export class Register {
             const key = apiKey.trim();
             if (key) {
               this.userService.setApiKey(key).subscribe({
-                next: () => this.router.navigate(['/dashboard']),
-                error: () => this.router.navigate(['/dashboard']),
+                next: () => this.router.navigate(['/home']),
+                error: () => this.router.navigate(['/home']),
               });
             } else {
-              this.router.navigate(['/dashboard']);
+              this.router.navigate(['/home']);
             }
           },
           error: () => this.errorMessage.set('Email is already in use'),

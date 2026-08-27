@@ -13,26 +13,37 @@ import { Comparison } from './pages/comparison/comparison';
 import { Plans } from './pages/plans/plans';
 import { PlanForm } from './pages/plans/plan-form/plan-form';
 import { PlanDetail } from './pages/plans/plan-detail/plan-detail';
+import { Landing } from './pages/landing/landing';
+import { Home } from './pages/home/home';
+import { MainLayout } from './layout/main-layout/main-layout';
 
 
 export const routes: Routes = [
+  { path: '', component: Landing },
   { path: 'login', component: Login },
   { path: 'register', component: Register },
-  { path: 'dashboard', component: Dashboard, canActivate: [authGuard] },
-  { path: 'categories', component: Categories, canActivate: [authGuard] },
-  { path: 'categories/create', component: CategoryForm, canActivate: [authGuard] },
-  { path: 'categories/edit/:id', component: CategoryForm, canActivate: [authGuard] },
-  { path: 'expenses', component: Expenses, canActivate: [authGuard] },
-  { path: 'expenses/create', component: ExpenseForm, canActivate: [authGuard] },
-  { path: 'expenses/edit/:id', component: ExpenseForm, canActivate: [authGuard] },
-  { path: 'plans', component: Plans, canActivate: [authGuard] },
-  { path: 'plans/create', component: PlanForm, canActivate: [authGuard] },
-  { path: 'plans/edit/:id', component: PlanForm, canActivate: [authGuard] },
-  { path: 'plans/:id', component: PlanDetail, canActivate: [authGuard] },
-  { path: 'saving-plan', component: SavingPlan, canActivate: [authGuard] },
-  { path: 'saving-plan/create', component: SavingPlanForm, canActivate: [authGuard] },
-  { path: 'saving-plan/edit', component: SavingPlanForm, data: { edit: true }, canActivate: [authGuard] },
-  { path: 'comparison', component: Comparison, canActivate: [authGuard] },
-  { path: '', pathMatch: 'full', redirectTo: '/dashboard' },
-  { path: '**', redirectTo: '/dashboard' }
+  {
+    path: '',
+    component: MainLayout,
+    canActivate: [authGuard],
+    children: [
+      { path: 'home', component: Home },
+      { path: 'profile', component: Dashboard },
+      { path: 'categories', component: Categories },
+      { path: 'categories/create', component: CategoryForm },
+      { path: 'categories/edit/:id', component: CategoryForm },
+      { path: 'expenses', component: Expenses },
+      { path: 'expenses/create', component: ExpenseForm },
+      { path: 'expenses/edit/:id', component: ExpenseForm },
+      { path: 'plans', component: Plans },
+      { path: 'plans/create', component: PlanForm },
+      { path: 'plans/edit/:id', component: PlanForm },
+      { path: 'plans/:id', component: PlanDetail },
+      { path: 'saving-plan', component: SavingPlan },
+      { path: 'saving-plan/create', component: SavingPlanForm },
+      { path: 'saving-plan/edit', component: SavingPlanForm, data: { edit: true } },
+      { path: 'comparison', component: Comparison },
+    ],
+  },
+  { path: '**', redirectTo: '/home' }
 ];

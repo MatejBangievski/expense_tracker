@@ -1,5 +1,5 @@
 @if (user().loading) {
-  <p class="text-center mt-5">Loading...</p>
+  <app-spinner />
 } @else if (user().data; as currentUser) {
   <div class="container py-4">
     <div class="d-flex justify-content-between align-items-center mb-4">

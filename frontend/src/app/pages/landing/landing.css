@@ -1,0 +1,35 @@
+.hero {
+  background: linear-gradient(180deg, #eff4ff 0%, #ffffff 100%);
+}
+
+.hero-lead {
+  max-width: 40rem;
+}
+
+.brand-mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 0.6rem;
+}
+
+.brand-mark svg {
+  width: 1.35rem;
+  height: 1.35rem;
+}
+
+.feature-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 3rem;
+  height: 3rem;
+  border-radius: 50%;
+}
+
+.feature-icon svg {
+  width: 1.5rem;
+  height: 1.5rem;
+}

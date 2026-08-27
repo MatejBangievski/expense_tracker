@@ -1,5 +1,7 @@
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { form, FormField, FormRoot, required, min } from '@angular/forms/signals';
+import { CurrencyPipe, DatePipe } from '@angular/common';
+import { RouterLink } from '@angular/router';
 import { PlanService } from '../../../services/plan.service';
 import { firstValueFrom, map, mergeMap, of } from 'rxjs';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -14,16 +16,16 @@ interface PlanFormModel {
 
 @Component({
   selector: 'app-plan-form',
-  imports: [FormField, FormRoot],
+  imports: [FormField, FormRoot, RouterLink, CurrencyPipe, DatePipe],
   templateUrl: './plan-form.html',
-  styleUrl: './plan-form.css',
+  styleUrl: '../../form-page.css',
 })
 export class PlanForm implements OnInit {
   service = inject(PlanService);
   router = inject(Router);
   route = inject(ActivatedRoute);
 
-  plan: Plan | undefined;
+  plan = signal<Plan | undefined>(undefined);
 
   planModel = signal<PlanFormModel>({
     name: '',
@@ -45,15 +47,13 @@ export class PlanForm implements OnInit {
         action: async (form) => {
           const value = form().value();
 
-          let result;
-          if (this.plan) {
-            result = await firstValueFrom(this.service.update(this.plan.id, value));
+          const existing = this.plan();
+          if (existing) {
+            await firstValueFrom(this.service.update(existing.id, value));
           } else {
-            result = await firstValueFrom(this.service.save(value));
+            await firstValueFrom(this.service.save(value));
           }
-          console.log('result', result);
           this.router.navigate(['/plans']);
-          return;
         },
       },
     },
@@ -63,13 +63,9 @@ export class PlanForm implements OnInit {
     this.route.paramMap
       .pipe(
         map((params) => params.get('id')),
-        mergeMap((id) => {
-          if (id) {
-            return this.service.getPlans().pipe(map((all) => all.find((p) => p.id === +id)));
-          } else {
-            return of(undefined);
-          }
-        }),
+        mergeMap((id) =>
+          id ? this.service.getPlans().pipe(map((all) => all.find((p) => p.id === +id))) : of(undefined),
+        ),
       )
       .subscribe((plan) => {
         if (plan) {
@@ -79,7 +75,7 @@ export class PlanForm implements OnInit {
             endDate: plan.endDate,
             totalBudget: plan.totalBudget,
           });
-          this.plan = plan;
+          this.plan.set(plan);
         }
       });
   }

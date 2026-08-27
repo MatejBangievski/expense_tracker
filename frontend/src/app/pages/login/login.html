@@ -1,43 +1,65 @@
-<div class="auth-page">
-  <div class="card p-4 auth-card">
-    <h1 class="h4 mb-3">Log in</h1>
+<div class="container min-vh-100 d-flex align-items-center justify-content-center py-4">
+  <div class="row justify-content-center w-100">
+    <div class="col-12 col-sm-9 col-md-6 col-lg-4">
+      <div class="card shadow-sm">
+        <div class="card-body p-4">
+          <h1 class="h4 mb-4">Log in</h1>
 
-    <form [formRoot]="loginForm">
-      <div class="mb-3">
-        <label for="email" class="form-label">Email</label>
-        <input id="email" type="email" class="form-control" [formField]="loginForm.email" />
-        @if (loginForm.email().dirty() && loginForm.email().invalid()) {
-          @for (error of loginForm.email().errors(); track error.kind) {
-            <div class="text-danger small">{{ error.message }}</div>
-          }
-        }
+          <form [formRoot]="loginForm">
+            <div class="mb-3">
+              <label for="email" class="form-label">Email</label>
+              <input
+                id="email"
+                type="email"
+                class="form-control"
+                [class.is-invalid]="loginForm.email().dirty() && loginForm.email().invalid()"
+                [formField]="loginForm.email"
+              />
+              <div class="invalid-feedback">
+                @for (error of loginForm.email().errors(); track error.kind) {
+                  <div>{{ error.message }}</div>
+                }
+              </div>
+            </div>
+
+            <div class="mb-3">
+              <label for="password" class="form-label">Password</label>
+              <input
+                id="password"
+                type="password"
+                class="form-control"
+                [class.is-invalid]="loginForm.password().dirty() && loginForm.password().invalid()"
+                [formField]="loginForm.password"
+              />
+              <div class="invalid-feedback">
+                @for (error of loginForm.password().errors(); track error.kind) {
+                  <div>{{ error.message }}</div>
+                }
+              </div>
+            </div>
+
+            @if (errorMessage()) {
+              <div class="alert alert-danger py-2" role="alert">{{ errorMessage() }}</div>
+            }
+
+            <button
+              type="submit"
+              class="btn btn-primary w-100"
+              [disabled]="!loginForm().valid() || loginForm().submitting()"
+            >
+              @if (loginForm().submitting()) {
+                Logging in...
+              } @else {
+                Log in
+              }
+            </button>
+          </form>
+
+          <p class="text-center text-body-secondary mt-3 mb-0">
+            No account? <a routerLink="/register">Register</a>
+          </p>
+        </div>
       </div>
-
-      <div class="mb-3">
-        <label for="password" class="form-label">Password</label>
-        <input id="password" type="password" class="form-control" [formField]="loginForm.password" />
-        @if (loginForm.password().dirty() && loginForm.password().invalid()) {
-          @for (error of loginForm.password().errors(); track error.kind) {
-            <div class="text-danger small">{{ error.message }}</div>
-          }
-        }
-      </div>
-
-      @if (errorMessage()) {
-        <div class="alert alert-danger py-2">{{ errorMessage() }}</div>
-      }
-
-      <button type="submit" class="btn btn-primary w-100" [disabled]="!loginForm().valid() || loginForm().submitting()">
-        @if (loginForm().submitting()) {
-          Logging in...
-        } @else {
-          Log in
-        }
-      </button>
-    </form>
-
-    <p class="text-center mt-3 mb-0">
-      No account? <a routerLink="/register">Register</a>
-    </p>
+    </div>
   </div>
 </div>

@@ -1,5 +1,5 @@
 @if (plan().loading) {
-  <p class="text-center mt-5">Loading…</p>
+  <app-spinner />
 } @else if (plan().data; as savingPlan) {
   <div class="container py-4">
     <div class="d-flex justify-content-between align-items-center mb-3">
@@ -63,7 +63,7 @@
 
     @if (!hasApiKey()) {
       <p class="text-secondary small">
-        AI generation needs a Gemini API key. <a routerLink="/dashboard">Add your API key from your dashboard</a>.
+        AI generation needs a Gemini API key. <a routerLink="/profile">Add your API key from your profile</a>.
       </p>
     }
 
@@ -73,24 +73,17 @@
         <input
           id="aiBudget"
           type="number"
-          [attr.min]="minAiBudget()"
-          class="form-control"
+          min="0"
+          class="form-control mb-2"
           [value]="aiBudget()"
           (input)="aiBudget.set($any($event.target).valueAsNumber)"
         />
-        @if (minAiBudget() > 0) {
-          <div class="form-text mb-2">At least {{ minAiBudget() | currency }} (10% above the {{ currentSpent() | currency }} already spent).</div>
-        }
         @if (aiError()) {
           <div class="alert alert-danger py-2">{{ aiError() }}</div>
         }
-        <button
-          type="button"
-          class="btn btn-primary"
-          (click)="generateAi()"
-          [disabled]="aiLoading() || aiBudget() <= 0 || aiBudget() < minAiBudget()"
-        >
+        <button type="button" class="btn btn-primary d-inline-flex align-items-center gap-2" (click)="generateAi()" [disabled]="aiLoading()">
           @if (aiLoading()) {
+            <mat-progress-spinner mode="indeterminate" [diameter]="18" aria-label="Generating" />
             Generating…
           } @else {
             Generate

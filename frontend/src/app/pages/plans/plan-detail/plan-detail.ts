@@ -5,10 +5,12 @@ import { firstValueFrom } from 'rxjs';
 import { PlanItemService } from '../../../services/plan-item.service';
 import { DailyPlanService } from '../../../services/daily-plan.service';
 import { CategoryService } from '../../../services/category.service';
+import { PlanService } from '../../../services/plan.service';
 import { PlanItem } from '../../../models/plan-item';
 import { DailyPlan } from '../../../models/daily-plan';
 import { Category } from '../../../models/category';
-import { CurrencyPipe } from '@angular/common';
+import { Plan } from '../../../models/plan';
+import { CurrencyPipe, DatePipe } from '@angular/common';
 
 interface NewItemForm {
   categoryId: string;
@@ -24,18 +26,19 @@ interface NewDailyPlanForm {
 
 @Component({
   selector: 'app-plan-detail',
-  imports: [FormField, FormRoot, RouterLink, CurrencyPipe],
+  imports: [FormField, FormRoot, RouterLink, CurrencyPipe, DatePipe],
   templateUrl: './plan-detail.html',
-  styleUrl: './plan-detail.css'
 })
 export class PlanDetail implements OnInit {
   route = inject(ActivatedRoute);
   itemService = inject(PlanItemService);
   dailyPlanService = inject(DailyPlanService);
   categoryService = inject(CategoryService);
+  planService = inject(PlanService);
 
   planId = 0;
 
+  plan = signal<Plan | undefined>(undefined);
   items = signal<PlanItem[]>([]);
   dailyPlans = signal<DailyPlan[]>([]);
   categories = signal<Category[]>([]);
@@ -106,6 +109,10 @@ export class PlanDetail implements OnInit {
 
     this.loadItems();
     this.loadDailyPlans();
+
+    this.planService
+      .getPlans()
+      .subscribe((plans) => this.plan.set(plans.find((plan) => plan.id === this.planId)));
 
     this.categoryService
       .getCategories()

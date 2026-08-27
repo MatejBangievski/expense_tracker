@@ -1,6 +1,7 @@
-import { Component, inject, OnInit, signal } from '@angular/core';
-import { form, FormField, FormRoot, min, required } from '@angular/forms/signals';
-import { HttpErrorResponse } from '@angular/common/http';
+import { Component, computed, inject, OnInit, signal } from '@angular/core';
+import { form, FormField, FormRoot, maxLength, min, required } from '@angular/forms/signals';
+import { CurrencyPipe, DatePipe } from '@angular/common';
+import { RouterLink } from '@angular/router';
 import { ExpenseService } from '../../../services/expense.service';
 import { CategoryService } from '../../../services/category.service';
 import { firstValueFrom, map, mergeMap, of } from 'rxjs';
@@ -12,9 +13,9 @@ import { Plan } from '../../../models/plan';
 
 @Component({
   selector: 'app-expense-form',
-  imports: [FormField, FormRoot],
+  imports: [FormField, FormRoot, RouterLink, CurrencyPipe, DatePipe],
   templateUrl: './expense-form.html',
-  styleUrl: './expense-form.css',
+  styleUrl: '../../form-page.css',
 })
 export class ExpenseForm implements OnInit {
   service = inject(ExpenseService);
@@ -23,10 +24,9 @@ export class ExpenseForm implements OnInit {
   router = inject(Router);
   route = inject(ActivatedRoute);
 
-  expense: Expense | undefined;
+  expense = signal<Expense | undefined>(undefined);
   categories = signal<Category[]>([]);
   plans = signal<Plan[]>([]);
-  errorMessage = signal('');
 
   expenseModel = signal<ExpenseFormModel>({
     categoryId: '0',
@@ -35,52 +35,40 @@ export class ExpenseForm implements OnInit {
     description: '',
   });
 
+  selectedCategory = computed(() =>
+    this.categories().find((category) => String(category.id) === this.expenseModel().categoryId),
+  );
+
   expenseForm = form(
     this.expenseModel,
     (schemaPath) => {
       required(schemaPath.categoryId, { message: 'Category is required' });
       min(schemaPath.amount, 0.01, { message: 'Amount must be greater than 0' });
       required(schemaPath.expenseDate, { message: 'Date is required' });
+      maxLength(schemaPath.description, 200, { message: 'Description must be at most 200 characters' });
     },
     {
       submission: {
         action: async (form) => {
-          this.errorMessage.set('');
           const value = form().value();
-          await this.submit(
-            {
-              categoryId: +value.categoryId,
-              amount: value.amount,
-              expenseDate: value.expenseDate,
-              description: value.description,
-            },
-            false,
-          );
+          const request = {
+            categoryId: +value.categoryId,
+            amount: value.amount,
+            expenseDate: value.expenseDate,
+            description: value.description,
+          };
+
+          const existing = this.expense();
+          if (existing) {
+            await firstValueFrom(this.service.update(existing.id, request));
+          } else {
+            await firstValueFrom(this.service.save(request));
+          }
+          this.router.navigate(['/expenses']);
         },
       },
     },
   );
-
-  private async submit(request: { categoryId: number; amount: number; expenseDate: string; description: string }, confirmOverBudget: boolean,): Promise<void> {
-    const body = { ...request, confirmOverBudget };
-    try {
-      if (this.expense) {
-        await firstValueFrom(this.service.update(this.expense.id, body));
-      } else {
-        await firstValueFrom(this.service.save(body));
-      }
-      this.router.navigate(['/expenses']);
-    } catch (err) {
-      const e = err as HttpErrorResponse;
-      if (e?.status === 409 && e.error?.error === 'over_budget') {
-        if (confirm(e.error.message ?? 'This expense exceeds your saving plan. Add it anyway?')) {
-          await this.submit(request, true);
-        }
-        return;
-      }
-      this.errorMessage.set(e?.error?.error ?? 'Could not save the expense. Please try again.');
-    }
-  }
 
   ngOnInit(): void {
     this.categoryService.getCategories().subscribe((categories) => this.categories.set(categories));
@@ -90,13 +78,7 @@ export class ExpenseForm implements OnInit {
     this.route.paramMap
       .pipe(
         map((params) => params.get('id')),
-        mergeMap((id) => {
-          if (id) {
-            return this.service.getExpenseById(+id);
-          } else {
-            return of(undefined);
-          }
-        }),
+        mergeMap((id) => (id ? this.service.getExpenseById(+id) : of(undefined))),
       )
       .subscribe((expense) => {
         if (expense) {
@@ -106,7 +88,7 @@ export class ExpenseForm implements OnInit {
             expenseDate: expense.expenseDate,
             description: expense.description ?? '',
           });
-          this.expense = expense;
+          this.expense.set(expense);
         }
       });
   }
