@@ -1,0 +1,25 @@
+<div class="card shadow-sm h-100">
+  <div class="card-body p-3 d-flex align-items-stretch gap-3">
+    @if (loading()) {
+      <app-spinner />
+    } @else if (top(); as t) {
+      <span class="stat-icon" [style.background-color]="t.color + '1f'" [style.color]="t.color">
+        <app-icon [name]="t.icon" size="1.75rem" />
+      </span>
+      <div class="d-flex flex-column justify-content-center min-w-0">
+        <span class="text-body-secondary small">Top Category</span>
+        <span class="h4 fw-bold mb-0 text-truncate">{{ t.name }}</span>
+        <span class="text-body-secondary small text-truncate">
+          {{ t.spent | currency }} ({{ t.share | percent: '1.1-1' }} of total)
+        </span>
+      </div>
+    } @else {
+      <span class="stat-icon bg-body-secondary text-body-secondary"><app-icon name="generic" size="1.75rem" /></span>
+      <div class="d-flex flex-column justify-content-center min-w-0">
+        <span class="text-body-secondary small">Top Category</span>
+        <span class="h4 fw-bold mb-0">—</span>
+        <span class="text-body-secondary small">No spending this month</span>
+      </div>
+    }
+  </div>
+</div>

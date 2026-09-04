@@ -2,6 +2,8 @@ package mk.sorsix.com.expense_tracker_backend.repository
 
 import org.springframework.data.jpa.domain.Specification
 import mk.sorsix.com.expense_tracker_backend.domain.Expense
+import mk.sorsix.com.expense_tracker_backend.domain.dto.CategoryTotalProjection
+import org.springframework.data.domain.Pageable
 import org.springframework.data.jpa.repository.EntityGraph
 import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor
@@ -18,6 +20,37 @@ interface ExpenseRepository : JpaRepository<Expense, Long>, JpaSpecificationExec
 
     @EntityGraph(attributePaths = ["category"])
     fun findByUserIdAndExpenseDateBetween(userId: Long, periodStart: LocalDate, periodEnd: LocalDate): List<Expense>
+
+    @EntityGraph(attributePaths = ["category"])
+    fun findByUserId(userId: Long, pageable: Pageable): List<Expense>
+
+    @Query(
+        """
+        SELECT COALESCE(SUM(e.amount), 0) FROM Expense e
+        WHERE e.user.id = :userId AND e.expenseDate BETWEEN :start AND :end
+    """
+    )
+    fun sumByUserAndDateRange(
+        @Param("userId") userId: Long,
+        @Param("start") start: LocalDate,
+        @Param("end") end: LocalDate
+    ): BigDecimal
+
+    @Query(
+        """
+        SELECT e.category.id AS categoryId, e.category.name AS categoryName, SUM(e.amount) AS totalSpent
+        FROM Expense e
+        WHERE e.user.id = :userId AND e.expenseDate BETWEEN :start AND :end
+        GROUP BY e.category.id, e.category.name
+        ORDER BY SUM(e.amount) DESC
+    """
+    )
+    fun topCategories(
+        @Param("userId") userId: Long,
+        @Param("start") start: LocalDate,
+        @Param("end") end: LocalDate,
+        pageable: Pageable
+    ): List<CategoryTotalProjection>
 
     @Query(
         """

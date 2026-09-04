@@ -6,14 +6,16 @@ import { ComparisonService } from '../../services/comparison.service';
 import { UserService } from '../../services/user.service';
 import { AvailablePeriod, PeriodComparison, PeriodType, periodLabel } from '../../models/period-comparison';
 import { Spinner } from '../../shared/spinner/spinner';
+import { Icon } from '../../shared/icon/icon';
 import { BaseChartDirective } from 'ng2-charts';
 import { ChartData, ChartOptions } from 'chart.js';
 import { CHART_COLORS, CHART_TRACK } from '../../shared/chart-colors';
 
 @Component({
   selector: 'app-comparison',
-  imports: [CurrencyPipe, DecimalPipe, RouterLink, Spinner, BaseChartDirective],
+  imports: [CurrencyPipe, DecimalPipe, RouterLink, Spinner, Icon, BaseChartDirective],
   templateUrl: './comparison.html',
+  styleUrl: './comparison.css',
 })
 export class Comparison implements OnInit {
   comparisonService = inject(ComparisonService);
@@ -36,6 +38,16 @@ export class Comparison implements OnInit {
   totalDelta = computed(() => {
     const r = this.result();
     return r ? r.currentTotalSpent - r.previousTotalSpent : 0;
+  });
+
+  currentAvgPerDay = computed(() => {
+    const r = this.result();
+    return r ? r.currentTotalSpent / this.daysInPeriod(r.periodType, r.currentPeriodStart) : 0;
+  });
+
+  previousAvgPerDay = computed(() => {
+    const r = this.result();
+    return r ? r.previousTotalSpent / this.daysInPeriod(r.periodType, r.previousPeriodStart) : 0;
   });
 
   optionsA = computed(() => this.periods().filter((p) => p.periodStart !== this.periodB()));
@@ -102,6 +114,16 @@ export class Comparison implements OnInit {
     this.loadPeriods();
   }
 
+  swapPeriods(): void {
+    const a = this.periodA();
+    this.periodA.set(this.periodB());
+    this.periodB.set(a);
+  }
+
+  typeLabel(type: PeriodType): string {
+    return type.charAt(0) + type.slice(1).toLowerCase();
+  }
+
   private loadPeriods(preferredCurrent?: string | null, preferredPrevious?: string | null, autoRun = false): void {
     this.comparisonService.availablePeriods(this.periodType()).subscribe((periods) => {
       this.periods.set(periods);
@@ -157,5 +179,18 @@ export class Comparison implements OnInit {
 
   label(iso: string, type: PeriodType): string {
     return periodLabel(iso, type);
+  }
+
+  private daysInPeriod(type: PeriodType, iso: string): number {
+    const date = new Date(iso);
+    if (type === 'WEEK') {
+      return 7;
+    }
+    if (type === 'MONTH') {
+      return new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
+    }
+    const year = date.getFullYear();
+    const leap = (year % 4 === 0 && year % 100 !== 0) || year % 400 === 0;
+    return leap ? 366 : 365;
   }
 }

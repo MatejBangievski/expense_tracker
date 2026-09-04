@@ -102,16 +102,21 @@ class PeriodComparisonService(
             .sortedByDescending { it.currentAmount }
     }
 
-    private fun findOrCreateSummary(user: User, periodType: PeriodType, date: LocalDate): PeriodSummaryResponse =
-        when (val found = periodSummaryService.find(user.id, periodType, date)) {
-            is FindPeriodSummaryResult.Success -> found.summary
-            is FindPeriodSummaryResult.SummaryNotFound ->
-                when (val generated = periodSummaryService.generateForUser(user.id, periodType, date)) {
-                    is GeneratePeriodSummaryResult.Success -> generated.summary
-                    is GeneratePeriodSummaryResult.UserNotFound ->
-                        error("summary generation reported unknown user for an authenticated principal")
-                }
+    private fun findOrCreateSummary(user: User, periodType: PeriodType, date: LocalDate): PeriodSummaryResponse {
+        val periodStart = periodType.startOf(date)
+        val complete = periodType.endOf(periodStart).isBefore(LocalDate.now(clock))
+        if (complete) {
+            when (val found = periodSummaryService.find(user.id, periodType, periodStart)) {
+                is FindPeriodSummaryResult.Success -> return found.summary
+                is FindPeriodSummaryResult.SummaryNotFound -> Unit
+            }
         }
+        return when (val generated = periodSummaryService.generateForUser(user.id, periodType, periodStart)) {
+            is GeneratePeriodSummaryResult.Success -> generated.summary
+            is GeneratePeriodSummaryResult.UserNotFound ->
+                error("summary generation reported unknown user for an authenticated principal")
+        }
+    }
 
     private fun generateMessage(user: User, current: PeriodSummaryResponse, previous: PeriodSummaryResponse): String? = try {
         userChatClientProvider.forUser(user).prompt()

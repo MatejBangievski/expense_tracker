@@ -1,0 +1,19 @@
+<div class="card shadow-sm h-100">
+  <div class="card-body p-3 d-flex align-items-stretch gap-3">
+    @if (!loading()) {
+      <span class="stat-icon violet"><app-icon name="trending-up" size="1.75rem" /></span>
+      <div class="d-flex flex-column justify-content-center min-w-0">
+        <span class="text-body-secondary small">vs last month</span>
+        @if (deltaPct() !== null) {
+          <span class="h4 fw-bold mb-0" [class.text-danger]="more()" [class.text-success]="!more()">
+            {{ more() ? '↑' : '↓' }} {{ deltaAbs() | percent: '1.0-1' }}
+          </span>
+          <span class="text-body-secondary small">{{ more() ? 'more' : 'less' }} spent than last month</span>
+        } @else {
+          <span class="h4 fw-bold mb-0">—</span>
+          <span class="text-body-secondary small">No spending last month</span>
+        }
+      </div>
+    }
+  </div>
+</div>

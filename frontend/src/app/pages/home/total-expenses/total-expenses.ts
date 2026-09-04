@@ -4,10 +4,11 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { forkJoin, map } from 'rxjs';
 import { ExpenseService } from '../../../services/expense.service';
 import { Expense, ExpenseFilter } from '../../../models/expense';
+import { Icon } from '../../../shared/icon/icon';
 
 @Component({
   selector: 'app-total-expenses',
-  imports: [CurrencyPipe, DecimalPipe],
+  imports: [CurrencyPipe, DecimalPipe, Icon],
   templateUrl: './total-expenses.html',
   styleUrl: './total-expenses.css',
 })

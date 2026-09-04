@@ -6,15 +6,22 @@ import mk.sorsix.com.expense_tracker_backend.domain.CreateExpenseResult
 import mk.sorsix.com.expense_tracker_backend.domain.DeleteExpenseResult
 import mk.sorsix.com.expense_tracker_backend.domain.Expense
 import mk.sorsix.com.expense_tracker_backend.domain.FindExpenseResult
+import mk.sorsix.com.expense_tracker_backend.domain.RecentExpensesResult
+import mk.sorsix.com.expense_tracker_backend.domain.TopCategoryResult
+import mk.sorsix.com.expense_tracker_backend.domain.TotalSpentResult
 import mk.sorsix.com.expense_tracker_backend.domain.UpdateExpenseResult
 import mk.sorsix.com.expense_tracker_backend.domain.User
 import mk.sorsix.com.expense_tracker_backend.domain.dto.CreateExpenseRequest
 import mk.sorsix.com.expense_tracker_backend.domain.dto.ExpenseFilter
 import mk.sorsix.com.expense_tracker_backend.domain.dto.ExpenseResponse
+import mk.sorsix.com.expense_tracker_backend.domain.dto.TopCategoryResponse
+import mk.sorsix.com.expense_tracker_backend.domain.dto.TotalResponse
 import mk.sorsix.com.expense_tracker_backend.domain.dto.UpdateExpenseRequest
 import mk.sorsix.com.expense_tracker_backend.repository.ExpenseRepository
 import mk.sorsix.com.expense_tracker_backend.repository.ExpenseSpecifications
 import mk.sorsix.com.expense_tracker_backend.util.money
+import org.springframework.data.domain.PageRequest
+import org.springframework.data.domain.Sort
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -53,6 +60,36 @@ class ExpenseService(
         return expenseRepository.findAll(specification).map {
             it.toResponse()
         }
+    }
+
+    fun recentExpenses(user: User, limit: Int): RecentExpensesResult {
+        if (limit < 1) {
+            return RecentExpensesResult.InvalidLimit
+        }
+        val pageable = PageRequest.of(
+            0,
+            limit.coerceAtMost(50),
+            Sort.by(Sort.Order.desc("expenseDate"), Sort.Order.desc("id"))
+        )
+        return RecentExpensesResult.Success(expenseRepository.findByUserId(user.id, pageable).map { it.toResponse() })
+    }
+
+    fun totalSpent(user: User, start: LocalDate, end: LocalDate): TotalSpentResult {
+        if (end.isBefore(start)) {
+            return TotalSpentResult.InvalidRange
+        }
+        return TotalSpentResult.Success(TotalResponse(expenseRepository.sumByUserAndDateRange(user.id, start, end)))
+    }
+
+    fun topCategory(user: User, start: LocalDate, end: LocalDate): TopCategoryResult {
+        if (end.isBefore(start)) {
+            return TopCategoryResult.InvalidRange
+        }
+        val top = expenseRepository.topCategories(user.id, start, end, PageRequest.of(0, 1)).firstOrNull()
+            ?: return TopCategoryResult.NoData
+        val overall = expenseRepository.sumByUserAndDateRange(user.id, start, end)
+        val share = if (overall > BigDecimal.ZERO) top.totalSpent.toDouble() / overall.toDouble() else 0.0
+        return TopCategoryResult.Success(TopCategoryResponse(top.categoryId, top.categoryName, top.totalSpent, share))
     }
 
     @Transactional

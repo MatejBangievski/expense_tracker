@@ -1,0 +1,30 @@
+<div class="card shadow-sm h-100">
+  <div class="card-body p-4">
+    <h2 class="h5 mb-3">Recent Transactions</h2>
+
+    @if (loading()) {
+      <app-spinner />
+    } @else {
+      <ul class="list-unstyled mb-0">
+        @for (expense of recent(); track expense.id) {
+          <li class="d-flex align-items-center py-2 border-bottom">
+            <span class="tx-icon me-3" [style.background-color]="color(expense) + '1f'" [style.color]="color(expense)">
+              <app-icon [name]="icon(expense)" />
+            </span>
+            <div class="flex-grow-1 min-w-0">
+              <div class="fw-medium text-truncate">{{ expense.description || expense.categoryName }}</div>
+              <div class="text-body-secondary small">{{ expense.expenseDate | date: 'mediumDate' }}</div>
+            </div>
+            <span class="fw-semibold ms-2">-{{ expense.amount | currency }}</span>
+          </li>
+        } @empty {
+          <li class="text-body-secondary text-center py-4">No transactions yet.</li>
+        }
+      </ul>
+
+      @if (recent().length > 0) {
+        <a routerLink="/expenses" class="d-block text-center mt-3 text-decoration-none">View all transactions</a>
+      }
+    }
+  </div>
+</div>

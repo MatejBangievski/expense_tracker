@@ -3,7 +3,9 @@ package mk.sorsix.com.expense_tracker_backend.api
 import mk.sorsix.com.expense_tracker_backend.domain.CreateExpenseResult
 import mk.sorsix.com.expense_tracker_backend.domain.DeleteExpenseResult
 import mk.sorsix.com.expense_tracker_backend.domain.FindExpenseResult
-
+import mk.sorsix.com.expense_tracker_backend.domain.RecentExpensesResult
+import mk.sorsix.com.expense_tracker_backend.domain.TopCategoryResult
+import mk.sorsix.com.expense_tracker_backend.domain.TotalSpentResult
 import mk.sorsix.com.expense_tracker_backend.domain.UpdateExpenseResult
 import mk.sorsix.com.expense_tracker_backend.domain.dto.CreateExpenseRequest
 import mk.sorsix.com.expense_tracker_backend.domain.dto.ExpenseFilter
@@ -118,5 +120,41 @@ class ExpenseController(
 
             is DeleteExpenseResult.ExpenseLocked -> ResponseEntity.status(HttpStatus.CONFLICT)
                 .body(mapOf("error" to "This expense is locked because its week has been summarized"))
+        }
+
+    @GetMapping("/recent")
+    fun recent(
+        @AuthenticationPrincipal userDetails: UserDetails,
+        @RequestParam(defaultValue = "5") limit: Int
+    ): ResponseEntity<*> =
+        when (val result = expenseService.recentExpenses(currentUserProvider.resolve(userDetails), limit)) {
+            is RecentExpensesResult.Success -> ResponseEntity.ok(result.expenses)
+            is RecentExpensesResult.InvalidLimit -> ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(mapOf("error" to "limit must be at least 1"))
+        }
+
+    @GetMapping("/total")
+    fun total(
+        @AuthenticationPrincipal userDetails: UserDetails,
+        @RequestParam periodStart: LocalDate,
+        @RequestParam periodEnd: LocalDate
+    ): ResponseEntity<*> =
+        when (val result = expenseService.totalSpent(currentUserProvider.resolve(userDetails), periodStart, periodEnd)) {
+            is TotalSpentResult.Success -> ResponseEntity.ok(result.total)
+            is TotalSpentResult.InvalidRange -> ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(mapOf("error" to "periodEnd must not be before periodStart"))
+        }
+
+    @GetMapping("/top-category")
+    fun topCategory(
+        @AuthenticationPrincipal userDetails: UserDetails,
+        @RequestParam periodStart: LocalDate,
+        @RequestParam periodEnd: LocalDate
+    ): ResponseEntity<*> =
+        when (val result = expenseService.topCategory(currentUserProvider.resolve(userDetails), periodStart, periodEnd)) {
+            is TopCategoryResult.Success -> ResponseEntity.ok(result.topCategory)
+            is TopCategoryResult.NoData -> ResponseEntity.noContent().build<Unit>()
+            is TopCategoryResult.InvalidRange -> ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(mapOf("error" to "periodEnd must not be before periodStart"))
         }
 }

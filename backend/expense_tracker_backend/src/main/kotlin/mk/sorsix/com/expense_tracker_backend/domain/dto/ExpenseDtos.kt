@@ -36,3 +36,20 @@ data class ExpenseFilter(
     val periodEnd: LocalDate? = null,
     val search: String? = null
 )
+
+data class TopCategoryResponse(
+    val categoryId: Long,
+    val categoryName: String,
+    val totalSpent: BigDecimal,
+    val share: Double
+)
+
+data class TotalResponse(
+    val total: BigDecimal
+)
+
+interface CategoryTotalProjection {
+    val categoryId: Long
+    val categoryName: String
+    val totalSpent: BigDecimal
+}

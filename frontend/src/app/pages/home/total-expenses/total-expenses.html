@@ -1,27 +1,21 @@
 <div class="card shadow-sm h-100">
-  <div class="card-body p-4 d-flex justify-content-between align-items-start">
-    <div>
-      <p class="text-body-secondary small mb-1">Total Expenses</p>
+  <div class="card-body p-3 d-flex align-items-stretch gap-3">
+    <span class="stat-icon bg-primary-subtle text-primary"><app-icon name="wallet" size="1.75rem" /></span>
+    <div class="d-flex flex-column justify-content-center min-w-0">
+      <span class="text-body-secondary small">Total Expenses</span>
       @if (loading()) {
-        <p class="placeholder-glow mb-0"><span class="placeholder col-8"></span></p>
+        <span class="placeholder-glow"><span class="placeholder col-8"></span></span>
       } @else {
-        <p class="h3 fw-bold mb-2">{{ total() | currency }}</p>
+        <span class="h4 fw-bold mb-0 text-truncate">{{ total() | currency }}</span>
         @if (delta() !== null) {
-          <p class="small mb-0" [class.text-success]="!deltaUp()" [class.text-danger]="deltaUp()">
+          <span class="small" [class.text-success]="!deltaUp()" [class.text-danger]="deltaUp()">
             {{ deltaUp() ? '↑' : '↓' }} {{ deltaAbs() | number: '1.0-0' }}%
             <span class="text-body-secondary">vs last week</span>
-          </p>
+          </span>
         } @else {
-          <p class="small text-body-secondary mb-0">This week</p>
+          <span class="small text-body-secondary">This week</span>
         }
       }
     </div>
-    <span class="stat-icon bg-primary-subtle text-primary" aria-hidden="true">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M3 7a2 2 0 0 1 2-2h13a1 1 0 0 1 1 1v2" />
-        <path d="M3 7v10a2 2 0 0 0 2 2h14a1 1 0 0 0 1-1v-9a1 1 0 0 0-1-1H5a2 2 0 0 1-2-2z" />
-        <circle cx="17" cy="13" r="1.2" />
-      </svg>
-    </span>
   </div>
 </div>

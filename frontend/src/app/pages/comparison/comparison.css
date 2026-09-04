@@ -1,0 +1,18 @@
+.stat-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.75rem;
+  height: 2.75rem;
+  border-radius: 0.6rem;
+  flex-shrink: 0;
+}
+
+.ai-insight {
+  background: color-mix(in srgb, var(--bs-purple, #6f42c1) 8%, var(--bs-body-bg));
+  border-color: color-mix(in srgb, var(--bs-purple, #6f42c1) 20%, transparent);
+}
+
+.min-w-0 {
+  min-width: 0;
+}

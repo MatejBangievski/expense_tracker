@@ -1,13 +1,17 @@
-.stat-icon {
+.tx-icon {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 3.75rem;
-  align-self: stretch;
-  border-radius: 0.85rem;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 50%;
   flex-shrink: 0;
 }
 
 .min-w-0 {
   min-width: 0;
+}
+
+li:last-child {
+  border-bottom: 0 !important;
 }

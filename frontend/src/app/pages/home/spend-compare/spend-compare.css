@@ -1,3 +1,7 @@
+:host {
+  display: block;
+}
+
 .stat-icon {
   display: inline-flex;
   align-items: center;
@@ -6,6 +10,11 @@
   align-self: stretch;
   border-radius: 0.85rem;
   flex-shrink: 0;
+}
+
+.stat-icon.violet {
+  background: #ede9fe;
+  color: #7c3aed;
 }
 
 .min-w-0 {

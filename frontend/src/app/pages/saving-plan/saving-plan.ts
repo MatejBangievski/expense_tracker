@@ -11,11 +11,12 @@ import { Spinner } from '../../shared/spinner/spinner';
 import { BaseChartDirective } from 'ng2-charts';
 import { ChartData, ChartOptions } from 'chart.js';
 import { CHART_DANGER, CHART_TRACK, chartColor } from '../../shared/chart-colors';
+import { Icon } from '../../shared/icon/icon';
 
 
 @Component({
   selector: 'app-saving-plan',
-  imports: [RouterLink, CurrencyPipe, MatProgressSpinner, Spinner, DatePipe, BaseChartDirective],
+  imports: [RouterLink, CurrencyPipe, MatProgressSpinner, Spinner, DatePipe, BaseChartDirective, Icon],
   templateUrl: './saving-plan.html',
   styleUrl: './saving-plan.css',
 })

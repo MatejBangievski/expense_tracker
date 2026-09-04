@@ -1,15 +1,28 @@
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
-import { Router } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { UserService } from '../../services/user.service';
 import { ComparisonService } from '../../services/comparison.service';
 import { ExpensesOverview } from './expenses-overview/expenses-overview';
 import { TotalExpenses } from './total-expenses/total-expenses';
 import { SpendingTrends } from './spending-trends/spending-trends';
+import { RecentTransactions } from './recent-transactions/recent-transactions';
+import { TopCategory } from './top-category/top-category';
+import { SpendCompare } from './spend-compare/spend-compare';
+import { Icon } from '../../shared/icon/icon';
 
 @Component({
   selector: 'app-home',
-  imports: [ExpensesOverview, TotalExpenses, SpendingTrends],
+  imports: [
+    ExpensesOverview,
+    TotalExpenses,
+    SpendingTrends,
+    RecentTransactions,
+    TopCategory,
+    SpendCompare,
+    RouterLink,
+    Icon,
+  ],
   templateUrl: './home.html',
 })
 export class Home implements OnInit {

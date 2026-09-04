@@ -2,7 +2,7 @@ import { HttpClient } from '@angular/common/http';
 import { inject, Service } from '@angular/core';
 import { Observable, map } from 'rxjs';
 import { Result } from '../models/result';
-import { Expense, ExpenseFilter } from '../models/expense';
+import { Expense, ExpenseFilter, TopCategory } from '../models/expense';
 
 @Service()
 export class ExpenseService {
@@ -22,6 +22,22 @@ export class ExpenseService {
 
   getExpenseById(id: number): Observable<Expense | undefined> {
     return this.http.get<Expense>(`/api/expenses/${id}`);
+  }
+
+  getRecent(limit: number): Observable<Expense[]> {
+    return this.http.get<Expense[]>(`/api/expenses/recent`, { params: { limit } });
+  }
+
+  getTopCategory(periodStart: string, periodEnd: string): Observable<TopCategory | null> {
+    return this.http.get<TopCategory | null>(`/api/expenses/top-category`, {
+      params: { periodStart, periodEnd },
+    });
+  }
+
+  getTotal(periodStart: string, periodEnd: string): Observable<number> {
+    return this.http
+      .get<{ total: number }>(`/api/expenses/total`, { params: { periodStart, periodEnd } })
+      .pipe(map((response) => response.total));
   }
 
   save(expense: { categoryId: number; amount: number; expenseDate: string; description: string; confirmOverBudget?: boolean }) {

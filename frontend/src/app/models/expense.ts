@@ -13,3 +13,10 @@ export interface ExpenseFilter {
   periodEnd?: string;
   search?: string;
 }
+
+export interface TopCategory {
+  categoryId: number;
+  categoryName: string;
+  totalSpent: number;
+  share: number;
+}

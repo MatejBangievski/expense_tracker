@@ -1,28 +1,41 @@
 <div class="container-fluid py-2">
-  <div class="mb-4">
-    <h1 class="h3 mb-1">{{ greeting() }}, {{ user()?.displayName }} 👋</h1>
-    <p class="text-body-secondary mb-0">Here's what's happening with your expenses.</p>
+  <div class="d-flex justify-content-between align-items-end mb-4 flex-wrap gap-3">
+    <div>
+      <h1 class="h3 mb-1">{{ greeting() }}, {{ user()?.displayName }} 👋</h1>
+      <p class="text-body-secondary mb-0">Here's what's happening with your expenses.</p>
+    </div>
+    <div class="d-flex gap-2 flex-wrap">
+      @if (hasPreviousMonth()) {
+        <button type="button" class="btn btn-outline-secondary d-inline-flex align-items-center gap-2" (click)="compareWithPreviousMonth()">
+          <app-icon name="swap" size="1rem" /> Compare with previous month
+        </button>
+      }
+      <a routerLink="/expenses/create" class="btn btn-primary d-inline-flex align-items-center gap-2">
+        <app-icon name="plus" size="1rem" /> Add Expense
+      </a>
+    </div>
   </div>
 
   <div class="row g-4 mb-4">
-    <div class="col-12 col-sm-6 col-xl-3">
+    <div class="col-12 col-md-4">
       <app-total-expenses />
+    </div>
+    <div class="col-12 col-md-4">
+      <app-top-category />
+    </div>
+    <div class="col-12 col-md-4">
+      <app-spend-compare />
     </div>
   </div>
 
   <div class="row g-4">
     <div class="col-12 col-xl-8">
       <app-expenses-overview />
+      <app-spending-trends class="d-block mt-4" />
+    </div>
 
-      <div class="mt-4">
-        <app-spending-trends />
-      </div>
-
-      @if (hasPreviousMonth()) {
-        <button type="button" class="btn btn-outline-primary mt-4" (click)="compareWithPreviousMonth()">
-          Compare with previous month
-        </button>
-      }
+    <div class="col-12 col-xl-4">
+      <app-recent-transactions />
     </div>
   </div>
 </div>
