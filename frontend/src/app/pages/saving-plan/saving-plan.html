@@ -110,48 +110,50 @@
   </div>
 } @else {
   <div class="container py-4">
-    <h1 class="h4 mb-3">Create a saving plan</h1>
-    <p class="text-secondary">You don't have a plan for this month yet. Choose how to create one.</p>
+    @if (aiLoading()) {
+      <div class="text-center py-5">
+        <app-spinner />
+        <p class="text-body-secondary mt-3 mb-0">Generating your saving plan…</p>
+      </div>
+    } @else {
+      <h1 class="h4 mb-3">Create a saving plan</h1>
+      <p class="text-secondary">You don't have a plan for this month yet. Choose how to create one.</p>
 
-    <div class="d-flex gap-2 mb-3">
-      <a class="btn btn-primary" routerLink="/saving-plan/create">Create manually</a>
-      <button type="button" class="btn btn-outline-primary" [disabled]="!hasApiKey()" (click)="showAi.set(true)">
-        Create with AI
-      </button>
-    </div>
-
-    @if (!hasApiKey()) {
-      <p class="text-secondary small">
-        AI generation needs a Gemini API key. <a routerLink="/profile">Add your API key from your profile</a>.
-      </p>
-    }
-
-    @if (hasApiKey() && showAi()) {
-      <div class="card p-3 ai-card">
-        <label for="aiBudget" class="form-label">Max budget</label>
-        <input
-          id="aiBudget"
-          type="number"
-          [attr.min]="minAiBudget()"
-          class="form-control mb-2"
-          [value]="aiBudget()"
-          (input)="aiBudget.set($any($event.target).valueAsNumber)"
-        />
-        @if (minAiBudget() > 0) {
-          <div class="form-text mb-2">At least {{ minAiBudget() | currency }} (10% above the {{ currentSpent() | currency }} already spent).</div>
-        }
-        @if (aiError()) {
-          <div class="alert alert-danger py-2">{{ aiError() }}</div>
-        }
-        <button type="button" class="btn btn-primary d-inline-flex align-items-center gap-2" (click)="generateAi()" [disabled]="aiLoading() || aiBudget() <= 0 || aiBudget() < minAiBudget()">
-          @if (aiLoading()) {
-            <mat-progress-spinner mode="indeterminate" [diameter]="18" aria-label="Generating" />
-            Generating…
-          } @else {
-            Generate
-          }
+      <div class="d-flex gap-2 mb-3">
+        <a class="btn btn-primary" routerLink="/saving-plan/create">Create manually</a>
+        <button type="button" class="btn btn-outline-primary" [disabled]="!hasApiKey()" (click)="showAi.set(true)">
+          Create with AI
         </button>
       </div>
+
+      @if (!hasApiKey()) {
+        <p class="text-secondary small">
+          AI generation needs a Gemini API key. <a routerLink="/profile">Add your API key from your profile</a>.
+        </p>
+      }
+
+      @if (hasApiKey() && showAi()) {
+        <div class="card p-3 ai-card">
+          <label for="aiBudget" class="form-label">Max budget</label>
+          <input
+            id="aiBudget"
+            type="number"
+            [attr.min]="minAiBudget()"
+            class="form-control mb-2"
+            [value]="aiBudget()"
+            (input)="aiBudget.set($any($event.target).valueAsNumber)"
+          />
+          @if (minAiBudget() > 0) {
+            <div class="form-text mb-2">At least {{ minAiBudget() | currency }} (10% above the {{ currentSpent() | currency }} already spent).</div>
+          }
+          @if (aiError()) {
+            <div class="alert alert-danger py-2">{{ aiError() }}</div>
+          }
+          <button type="button" class="btn btn-primary" (click)="generateAi()" [disabled]="aiBudget() <= 0 || aiBudget() < minAiBudget()">
+            Generate
+          </button>
+        </div>
+      }
     }
   </div>
 }

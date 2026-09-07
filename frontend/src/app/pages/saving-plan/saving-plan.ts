@@ -6,7 +6,6 @@ import { CurrencyPipe, DatePipe } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { SavingPlanService } from '../../services/saving-plan.service';
 import { UserService } from '../../services/user.service';
-import { MatProgressSpinner } from '@angular/material/progress-spinner';
 import { Spinner } from '../../shared/spinner/spinner';
 import { BaseChartDirective } from 'ng2-charts';
 import { ChartData, ChartOptions } from 'chart.js';
@@ -16,7 +15,7 @@ import { Icon } from '../../shared/icon/icon';
 
 @Component({
   selector: 'app-saving-plan',
-  imports: [RouterLink, CurrencyPipe, MatProgressSpinner, Spinner, DatePipe, BaseChartDirective, Icon],
+  imports: [RouterLink, CurrencyPipe, Spinner, DatePipe, BaseChartDirective, Icon],
   templateUrl: './saving-plan.html',
   styleUrl: './saving-plan.css',
 })

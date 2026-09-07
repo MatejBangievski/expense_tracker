@@ -202,7 +202,7 @@ export class PlanDetail implements OnInit {
       this.loadItems();
       this.loadDailyPlans();
 
-      this.newItemModel.set({
+      this.newItemForm().reset({
         categoryId: '0',
         description: '',
         plannedDate: '',
@@ -247,7 +247,7 @@ export class PlanDetail implements OnInit {
 
       this.loadDailyPlans();
 
-      this.newDailyPlanModel.set({
+      this.newDailyPlanForm().reset({
         date: '',
         allocatedAmount: 0
       });

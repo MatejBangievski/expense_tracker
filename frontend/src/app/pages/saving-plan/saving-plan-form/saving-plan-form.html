@@ -6,7 +6,7 @@
       <div class="mb-3">
         <label for="budgetLimit" class="form-label">Max budget</label>
         <input id="budgetLimit" type="number" class="form-control" [formField]="budgetForm.budgetLimit" />
-        @if (budgetForm.budgetLimit().dirty() && budgetForm.budgetLimit().invalid()) {
+        @if (budgetForm.budgetLimit().touched() && budgetForm.budgetLimit().invalid()) {
           @for (error of budgetForm.budgetLimit().errors(); track error.kind) {
             <div class="text-danger small">{{ error.message }}</div>
           }

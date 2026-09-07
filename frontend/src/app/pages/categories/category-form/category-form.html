@@ -17,7 +17,7 @@
               id="name"
               type="text"
               class="form-control"
-              [class.is-invalid]="categoryForm.name().dirty() && categoryForm.name().invalid()"
+              [class.is-invalid]="categoryForm.name().touched() && categoryForm.name().invalid()"
               [formField]="categoryForm.name"
             />
             <div class="invalid-feedback">

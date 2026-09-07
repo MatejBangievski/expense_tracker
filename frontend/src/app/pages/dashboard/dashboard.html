@@ -41,7 +41,7 @@
           <div class="mb-3">
             <label for="displayName" class="form-label">Display name</label>
             <input id="displayName" type="text" class="form-control" [formField]="profileForm.displayName" />
-            @if (profileForm.displayName().dirty() && profileForm.displayName().invalid()) {
+            @if (profileForm.displayName().touched() && profileForm.displayName().invalid()) {
               @for (error of profileForm.displayName().errors(); track error.kind) {
                 <div class="text-danger small">{{ error.message }}</div>
               }
@@ -51,7 +51,7 @@
           <div class="mb-3">
             <label for="monthlySalary" class="form-label">Monthly salary</label>
             <input id="monthlySalary" type="number" class="form-control" [formField]="profileForm.monthlySalary" />
-            @if (profileForm.monthlySalary().dirty() && profileForm.monthlySalary().invalid()) {
+            @if (profileForm.monthlySalary().touched() && profileForm.monthlySalary().invalid()) {
               @for (error of profileForm.monthlySalary().errors(); track error.kind) {
                 <div class="text-danger small">{{ error.message }}</div>
               }
@@ -75,7 +75,7 @@
           <div class="mb-3">
             <label for="currentPassword" class="form-label">Current password</label>
             <input id="currentPassword" type="password" class="form-control" [formField]="passwordForm.currentPassword" />
-            @if (passwordForm.currentPassword().dirty() && passwordForm.currentPassword().invalid()) {
+            @if (passwordForm.currentPassword().touched() && passwordForm.currentPassword().invalid()) {
               @for (error of passwordForm.currentPassword().errors(); track error.kind) {
                 <div class="text-danger small">{{ error.message }}</div>
               }
@@ -85,7 +85,7 @@
           <div class="mb-3">
             <label for="newPassword" class="form-label">New password</label>
             <input id="newPassword" type="password" class="form-control" [formField]="passwordForm.newPassword" />
-            @if (passwordForm.newPassword().dirty() && passwordForm.newPassword().invalid()) {
+            @if (passwordForm.newPassword().touched() && passwordForm.newPassword().invalid()) {
               @for (error of passwordForm.newPassword().errors(); track error.kind) {
                 <div class="text-danger small">{{ error.message }}</div>
               }

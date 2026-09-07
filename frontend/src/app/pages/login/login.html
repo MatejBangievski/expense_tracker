@@ -12,7 +12,7 @@
                 id="email"
                 type="email"
                 class="form-control"
-                [class.is-invalid]="loginForm.email().dirty() && loginForm.email().invalid()"
+                [class.is-invalid]="loginForm.email().touched() && loginForm.email().invalid()"
                 [formField]="loginForm.email"
               />
               <div class="invalid-feedback">
@@ -28,7 +28,7 @@
                 id="password"
                 type="password"
                 class="form-control"
-                [class.is-invalid]="loginForm.password().dirty() && loginForm.password().invalid()"
+                [class.is-invalid]="loginForm.password().touched() && loginForm.password().invalid()"
                 [formField]="loginForm.password"
               />
               <div class="invalid-feedback">

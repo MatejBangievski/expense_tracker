@@ -7,10 +7,6 @@
   max-width: 24rem;
 }
 
-.btn-primary mat-progress-spinner {
-  --mdc-circular-progress-active-indicator-color: #ffffff;
-}
-
 .breakdown-wrap {
   position: relative;
   height: 90px;

@@ -12,7 +12,7 @@
                 id="displayName"
                 type="text"
                 class="form-control"
-                [class.is-invalid]="registerForm.displayName().dirty() && registerForm.displayName().invalid()"
+                [class.is-invalid]="registerForm.displayName().touched() && registerForm.displayName().invalid()"
                 [formField]="registerForm.displayName"
               />
               <div class="invalid-feedback">
@@ -28,7 +28,7 @@
                 id="email"
                 type="email"
                 class="form-control"
-                [class.is-invalid]="registerForm.email().dirty() && registerForm.email().invalid()"
+                [class.is-invalid]="registerForm.email().touched() && registerForm.email().invalid()"
                 [formField]="registerForm.email"
               />
               <div class="invalid-feedback">
@@ -44,7 +44,7 @@
                 id="password"
                 type="password"
                 class="form-control"
-                [class.is-invalid]="registerForm.password().dirty() && registerForm.password().invalid()"
+                [class.is-invalid]="registerForm.password().touched() && registerForm.password().invalid()"
                 [formField]="registerForm.password"
               />
               <div class="invalid-feedback">

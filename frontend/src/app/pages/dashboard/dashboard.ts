@@ -99,7 +99,7 @@ export class Dashboard implements OnInit {
   }
 
   onEdit(currentUser: { displayName: string; monthlySalary: number }) {
-    this.profileModel.set({
+    this.profileForm().reset({
       displayName: currentUser.displayName,
       monthlySalary: currentUser.monthlySalary,
     });

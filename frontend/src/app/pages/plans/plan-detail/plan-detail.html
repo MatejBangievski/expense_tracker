@@ -92,7 +92,7 @@
             type="text"
             class="form-control"
             placeholder="Description"
-            [class.is-invalid]="newItemForm.description().dirty() && newItemForm.description().invalid()"
+            [class.is-invalid]="newItemForm.description().touched() && newItemForm.description().invalid()"
             [formField]="newItemForm.description"
           />
           <div class="invalid-feedback">
@@ -106,7 +106,7 @@
             type="date"
             class="form-control"
             aria-label="Planned date"
-            [class.is-invalid]="newItemForm.plannedDate().dirty() && newItemForm.plannedDate().invalid()"
+            [class.is-invalid]="newItemForm.plannedDate().touched() && newItemForm.plannedDate().invalid()"
             [formField]="newItemForm.plannedDate"
           />
           <div class="invalid-feedback">
@@ -123,7 +123,7 @@
               step="0.01"
               class="form-control"
               aria-label="Planned amount"
-              [class.is-invalid]="newItemForm.plannedAmount().dirty() && newItemForm.plannedAmount().invalid()"
+              [class.is-invalid]="newItemForm.plannedAmount().touched() && newItemForm.plannedAmount().invalid()"
               [formField]="newItemForm.plannedAmount"
             />
             <div class="invalid-feedback">
@@ -187,7 +187,7 @@
             type="date"
             class="form-control"
             aria-label="Date"
-            [class.is-invalid]="newDailyPlanForm.date().dirty() && newDailyPlanForm.date().invalid()"
+            [class.is-invalid]="newDailyPlanForm.date().touched() && newDailyPlanForm.date().invalid()"
             [formField]="newDailyPlanForm.date"
           />
           <div class="invalid-feedback">
@@ -204,7 +204,7 @@
               step="0.01"
               class="form-control"
               aria-label="Allocated amount"
-              [class.is-invalid]="newDailyPlanForm.allocatedAmount().dirty() && newDailyPlanForm.allocatedAmount().invalid()"
+              [class.is-invalid]="newDailyPlanForm.allocatedAmount().touched() && newDailyPlanForm.allocatedAmount().invalid()"
               [formField]="newDailyPlanForm.allocatedAmount"
             />
             <div class="invalid-feedback">
