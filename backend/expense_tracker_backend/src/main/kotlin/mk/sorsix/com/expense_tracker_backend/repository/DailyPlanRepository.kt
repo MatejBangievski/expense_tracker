@@ -10,5 +10,9 @@ import java.time.LocalDate
 interface DailyPlanRepository : JpaRepository<DailyPlan, Long> {
     @EntityGraph(attributePaths = ["plan"])
     fun findByPlanId(planId: Long): List<DailyPlan>
-    fun findByPlanIdAndDate(planId: Long, date: LocalDate): DailyPlan?
+
+    fun findByPlanIdAndDate(
+        planId: Long,
+        date: LocalDate,
+    ): DailyPlan?
 }

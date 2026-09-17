@@ -32,16 +32,15 @@ import java.time.LocalDate
 @RequestMapping("api/expenses")
 class ExpenseController(
     private val expenseService: ExpenseService,
-    private val currentUserProvider: CurrentUserProvider
+    private val currentUserProvider: CurrentUserProvider,
 ) {
-
     @GetMapping
     fun getExpenses(
         @AuthenticationPrincipal userDetails: UserDetails,
         @RequestParam(required = false) categoryName: String?,
         @RequestParam(required = false) periodStart: LocalDate?,
         @RequestParam(required = false) periodEnd: LocalDate?,
-        @RequestParam(required = false) search: String?
+        @RequestParam(required = false) search: String?,
     ): List<ExpenseResponse> {
         val filter = ExpenseFilter(categoryName, periodStart, periodEnd, search)
         return expenseService.listExpenses(currentUserProvider.resolve(userDetails), filter)
@@ -50,111 +49,145 @@ class ExpenseController(
     @GetMapping("/{id}")
     fun getById(
         @AuthenticationPrincipal userDetails: UserDetails,
-        @PathVariable id: Long
+        @PathVariable id: Long,
     ): ResponseEntity<*> =
         when (val result = expenseService.findById(currentUserProvider.resolve(userDetails), id)) {
             is FindExpenseResult.Success -> ResponseEntity.ok(result.expense)
-            is FindExpenseResult.ExpenseNotFound -> ResponseEntity.status(HttpStatus.NOT_FOUND)
-                .body(mapOf("error" to "Expense not found"))
+            is FindExpenseResult.ExpenseNotFound ->
+                ResponseEntity
+                    .status(HttpStatus.NOT_FOUND)
+                    .body(mapOf("error" to "Expense not found"))
 
-            is FindExpenseResult.NotOwner -> ResponseEntity.status(HttpStatus.FORBIDDEN)
-                .body(mapOf("error" to "You do not own this expense"))
+            is FindExpenseResult.NotOwner ->
+                ResponseEntity
+                    .status(HttpStatus.FORBIDDEN)
+                    .body(mapOf("error" to "You do not own this expense"))
         }
 
     @PostMapping
     fun createExpense(
         @AuthenticationPrincipal userDetails: UserDetails,
-        @RequestBody request: CreateExpenseRequest
+        @RequestBody request: CreateExpenseRequest,
     ): ResponseEntity<*> =
         when (val result = expenseService.createExpense(currentUserProvider.resolve(userDetails), request)) {
             is CreateExpenseResult.Success -> ResponseEntity.ok(result.expense)
-            is CreateExpenseResult.CategoryNotFound -> ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                .body(mapOf("error" to "Category not found"))
+            is CreateExpenseResult.CategoryNotFound ->
+                ResponseEntity
+                    .status(HttpStatus.BAD_REQUEST)
+                    .body(mapOf("error" to "Category not found"))
 
-            is CreateExpenseResult.PlanNotFound -> ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                .body(mapOf("error" to "Plan not found"))
+            is CreateExpenseResult.PlanNotFound ->
+                ResponseEntity
+                    .status(HttpStatus.BAD_REQUEST)
+                    .body(mapOf("error" to "Plan not found"))
 
-            is CreateExpenseResult.OverBudgetWarning -> ResponseEntity.status(HttpStatus.CONFLICT)
-                .body(mapOf("error" to "over_budget", "message" to result.message))
+            is CreateExpenseResult.OverBudgetWarning ->
+                ResponseEntity
+                    .status(HttpStatus.CONFLICT)
+                    .body(mapOf("error" to "over_budget", "message" to result.message))
         }
 
     @PutMapping("/{id}")
     fun updateExpense(
         @AuthenticationPrincipal userDetails: UserDetails,
         @PathVariable id: Long,
-        @RequestBody request: UpdateExpenseRequest
+        @RequestBody request: UpdateExpenseRequest,
     ): ResponseEntity<*> =
         when (val result = expenseService.updateExpense(currentUserProvider.resolve(userDetails), id, request)) {
             is UpdateExpenseResult.Success -> ResponseEntity.ok(result.expense)
-            is UpdateExpenseResult.ExpenseNotFound -> ResponseEntity.status(HttpStatus.NOT_FOUND)
-                .body(mapOf("error" to "Expense not found"))
+            is UpdateExpenseResult.ExpenseNotFound ->
+                ResponseEntity
+                    .status(HttpStatus.NOT_FOUND)
+                    .body(mapOf("error" to "Expense not found"))
 
-            is UpdateExpenseResult.CategoryNotFound -> ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                .body(mapOf("error" to "Category not found"))
+            is UpdateExpenseResult.CategoryNotFound ->
+                ResponseEntity
+                    .status(HttpStatus.BAD_REQUEST)
+                    .body(mapOf("error" to "Category not found"))
 
-            is UpdateExpenseResult.NotOwner -> ResponseEntity.status(HttpStatus.FORBIDDEN)
-                .body(mapOf("error" to "You do not own this expense"))
+            is UpdateExpenseResult.NotOwner ->
+                ResponseEntity
+                    .status(HttpStatus.FORBIDDEN)
+                    .body(mapOf("error" to "You do not own this expense"))
 
-            is UpdateExpenseResult.ExpenseLocked -> ResponseEntity.status(HttpStatus.CONFLICT)
-                .body(mapOf("error" to "This expense is locked because its week has been summarized"))
+            is UpdateExpenseResult.ExpenseLocked ->
+                ResponseEntity
+                    .status(HttpStatus.CONFLICT)
+                    .body(mapOf("error" to "This expense is locked because its week has been summarized"))
 
-            is UpdateExpenseResult.PlanNotFound -> ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                .body(mapOf("error" to "Plan not found"))
+            is UpdateExpenseResult.PlanNotFound ->
+                ResponseEntity
+                    .status(HttpStatus.BAD_REQUEST)
+                    .body(mapOf("error" to "Plan not found"))
 
-            is UpdateExpenseResult.OverBudgetWarning -> ResponseEntity.status(HttpStatus.CONFLICT)
-                .body(mapOf("error" to "over_budget", "message" to result.message))
+            is UpdateExpenseResult.OverBudgetWarning ->
+                ResponseEntity
+                    .status(HttpStatus.CONFLICT)
+                    .body(mapOf("error" to "over_budget", "message" to result.message))
         }
 
     @DeleteMapping("/{id}")
     fun delete(
         @AuthenticationPrincipal userDetails: UserDetails,
-        @PathVariable id: Long
+        @PathVariable id: Long,
     ): ResponseEntity<*> =
         when (val result = expenseService.deleteExpense(currentUserProvider.resolve(userDetails), id)) {
             is DeleteExpenseResult.Success -> ResponseEntity.noContent().build<Unit>()
-            is DeleteExpenseResult.ExpenseNotFound -> ResponseEntity.status(HttpStatus.NOT_FOUND)
-                .body(mapOf("error" to "Expense not found"))
+            is DeleteExpenseResult.ExpenseNotFound ->
+                ResponseEntity
+                    .status(HttpStatus.NOT_FOUND)
+                    .body(mapOf("error" to "Expense not found"))
 
-            is DeleteExpenseResult.NotOwner -> ResponseEntity.status(HttpStatus.FORBIDDEN)
-                .body(mapOf("error" to "You do not own this expense"))
+            is DeleteExpenseResult.NotOwner ->
+                ResponseEntity
+                    .status(HttpStatus.FORBIDDEN)
+                    .body(mapOf("error" to "You do not own this expense"))
 
-            is DeleteExpenseResult.ExpenseLocked -> ResponseEntity.status(HttpStatus.CONFLICT)
-                .body(mapOf("error" to "This expense is locked because its week has been summarized"))
+            is DeleteExpenseResult.ExpenseLocked ->
+                ResponseEntity
+                    .status(HttpStatus.CONFLICT)
+                    .body(mapOf("error" to "This expense is locked because its week has been summarized"))
         }
 
     @GetMapping("/recent")
     fun recent(
         @AuthenticationPrincipal userDetails: UserDetails,
-        @RequestParam(defaultValue = "5") limit: Int
+        @RequestParam(defaultValue = "5") limit: Int,
     ): ResponseEntity<*> =
         when (val result = expenseService.recentExpenses(currentUserProvider.resolve(userDetails), limit)) {
             is RecentExpensesResult.Success -> ResponseEntity.ok(result.expenses)
-            is RecentExpensesResult.InvalidLimit -> ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                .body(mapOf("error" to "limit must be at least 1"))
+            is RecentExpensesResult.InvalidLimit ->
+                ResponseEntity
+                    .status(HttpStatus.BAD_REQUEST)
+                    .body(mapOf("error" to "limit must be at least 1"))
         }
 
     @GetMapping("/total")
     fun total(
         @AuthenticationPrincipal userDetails: UserDetails,
         @RequestParam periodStart: LocalDate,
-        @RequestParam periodEnd: LocalDate
+        @RequestParam periodEnd: LocalDate,
     ): ResponseEntity<*> =
         when (val result = expenseService.totalSpent(currentUserProvider.resolve(userDetails), periodStart, periodEnd)) {
             is TotalSpentResult.Success -> ResponseEntity.ok(result.total)
-            is TotalSpentResult.InvalidRange -> ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                .body(mapOf("error" to "periodEnd must not be before periodStart"))
+            is TotalSpentResult.InvalidRange ->
+                ResponseEntity
+                    .status(HttpStatus.BAD_REQUEST)
+                    .body(mapOf("error" to "periodEnd must not be before periodStart"))
         }
 
     @GetMapping("/top-category")
     fun topCategory(
         @AuthenticationPrincipal userDetails: UserDetails,
         @RequestParam periodStart: LocalDate,
-        @RequestParam periodEnd: LocalDate
+        @RequestParam periodEnd: LocalDate,
     ): ResponseEntity<*> =
         when (val result = expenseService.topCategory(currentUserProvider.resolve(userDetails), periodStart, periodEnd)) {
             is TopCategoryResult.Success -> ResponseEntity.ok(result.topCategory)
             is TopCategoryResult.NoData -> ResponseEntity.noContent().build<Unit>()
-            is TopCategoryResult.InvalidRange -> ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                .body(mapOf("error" to "periodEnd must not be before periodStart"))
+            is TopCategoryResult.InvalidRange ->
+                ResponseEntity
+                    .status(HttpStatus.BAD_REQUEST)
+                    .body(mapOf("error" to "periodEnd must not be before periodStart"))
         }
 }

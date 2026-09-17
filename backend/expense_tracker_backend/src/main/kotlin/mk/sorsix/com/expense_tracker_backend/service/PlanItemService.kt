@@ -20,33 +20,44 @@ class PlanItemService(
     private val planItemRepository: PlanItemRepository,
     private val categoryService: CategoryService,
     private val planService: PlanService,
-    private val dailyPlanRepository: DailyPlanRepository
+    private val dailyPlanRepository: DailyPlanRepository,
 ) {
-    fun findById(id: Long): PlanItem? {
-        return planItemRepository.findByIdOrNull(id)
-    }
+    fun findById(id: Long): PlanItem? = planItemRepository.findByIdOrNull(id)
 
-    fun listPlanItems(user: User, planId: Long): List<PlanItemResponse>? {
+    fun listPlanItems(
+        user: User,
+        planId: Long,
+    ): List<PlanItemResponse>? {
         val plan = planService.findPlanById(planId) ?: return null
         if (plan.user.id != user.id) return null
         return planItemRepository.findByPlanId(planId).map { it.toResponse() }
     }
-    fun createPlanItem(user: User, planId: Long, request: CreatePlanItemRequest): CreatePlanItemResult {
-        val plan = planService.findPlanById(planId)
-            ?: return CreatePlanItemResult.PlanNotFound
+
+    fun createPlanItem(
+        user: User,
+        planId: Long,
+        request: CreatePlanItemRequest,
+    ): CreatePlanItemResult {
+        val plan =
+            planService.findPlanById(planId)
+                ?: return CreatePlanItemResult.PlanNotFound
 
         if (plan.user.id != user.id) {
             return CreatePlanItemResult.NotOwner
         }
 
-        val currentTotal = planItemRepository.findByPlanId(planId)
-            .fold(BigDecimal.ZERO) { sum, item -> sum + item.plannedAmount }
+        val currentTotal =
+            planItemRepository
+                .findByPlanId(planId)
+                .fold(BigDecimal.ZERO) { sum, item -> sum + item.plannedAmount }
 
         val dailyPlan = dailyPlanRepository.findByPlanIdAndDate(planId, request.plannedDate)
         if (dailyPlan != null) {
-            val currentDailyTotal = planItemRepository.findByPlanId(planId)
-                .filter { it.plannedDate == request.plannedDate }
-                .fold(BigDecimal.ZERO) { sum, item -> sum + item.plannedAmount }
+            val currentDailyTotal =
+                planItemRepository
+                    .findByPlanId(planId)
+                    .filter { it.plannedDate == request.plannedDate }
+                    .fold(BigDecimal.ZERO) { sum, item -> sum + item.plannedAmount }
 
             val remainingDaily = dailyPlan.allocatedAmount - currentDailyTotal
             if (request.plannedAmount > remainingDaily && request.confirmOverBudget != true) {
@@ -65,8 +76,9 @@ class PlanItemService(
 
         var category: Category? = null
         if (request.categoryId != null) {
-            val foundCategory = categoryService.findCategoryById(request.categoryId)
-                ?: return CreatePlanItemResult.CategoryNotFound
+            val foundCategory =
+                categoryService.findCategoryById(request.categoryId)
+                    ?: return CreatePlanItemResult.CategoryNotFound
 
             val categoryOwner = foundCategory.user
             if (categoryOwner != null && categoryOwner.id != user.id) {
@@ -76,22 +88,28 @@ class PlanItemService(
             category = foundCategory
         }
 
-        val saved = planItemRepository.save(
-            PlanItem(
-                plan = plan,
-                category = category,
-                description = request.description,
-                plannedDate = request.plannedDate,
-                plannedAmount = request.plannedAmount
+        val saved =
+            planItemRepository.save(
+                PlanItem(
+                    plan = plan,
+                    category = category,
+                    description = request.description,
+                    plannedDate = request.plannedDate,
+                    plannedAmount = request.plannedAmount,
+                ),
             )
-        )
 
         return CreatePlanItemResult.Success(saved.toResponse())
     }
 
-    fun updatePlanItem(user: User, itemId: Long, request: UpdatePlanItemRequest): UpdatePlanItemResult {
-        val existing = planItemRepository.findById(itemId).orElse(null)
-            ?: return UpdatePlanItemResult.ItemNotFound
+    fun updatePlanItem(
+        user: User,
+        itemId: Long,
+        request: UpdatePlanItemRequest,
+    ): UpdatePlanItemResult {
+        val existing =
+            planItemRepository.findById(itemId).orElse(null)
+                ?: return UpdatePlanItemResult.ItemNotFound
 
         if (existing.plan.user.id != user.id) {
             return UpdatePlanItemResult.NotOwner
@@ -103,9 +121,11 @@ class PlanItemService(
 
         val dailyPlan = dailyPlanRepository.findByPlanIdAndDate(existing.plan.id, request.plannedDate)
         if (dailyPlan != null) {
-            val otherDailyTotal = planItemRepository.findByPlanId(existing.plan.id)
-                .filter { it.id != itemId && it.plannedDate == request.plannedDate }
-                .fold(BigDecimal.ZERO) { sum, item -> sum + item.plannedAmount }
+            val otherDailyTotal =
+                planItemRepository
+                    .findByPlanId(existing.plan.id)
+                    .filter { it.id != itemId && it.plannedDate == request.plannedDate }
+                    .fold(BigDecimal.ZERO) { sum, item -> sum + item.plannedAmount }
 
             val remainingDaily = dailyPlan.allocatedAmount - otherDailyTotal
             if (request.plannedAmount > remainingDaily && request.confirmOverBudget != true) {
@@ -113,10 +133,11 @@ class PlanItemService(
             }
         }
 
-
-        val otherItemsTotal = planItemRepository.findByPlanId(existing.plan.id)
-            .filter { it.id != itemId }
-            .fold(BigDecimal.ZERO) { sum, item -> sum + item.plannedAmount }
+        val otherItemsTotal =
+            planItemRepository
+                .findByPlanId(existing.plan.id)
+                .filter { it.id != itemId }
+                .fold(BigDecimal.ZERO) { sum, item -> sum + item.plannedAmount }
 
         val remaining = existing.plan.totalBudget - otherItemsTotal
 
@@ -126,8 +147,9 @@ class PlanItemService(
 
         var category: Category? = null
         if (request.categoryId != null) {
-            val foundCategory = categoryService.findCategoryById(request.categoryId)
-                ?: return UpdatePlanItemResult.CategoryNotFound
+            val foundCategory =
+                categoryService.findCategoryById(request.categoryId)
+                    ?: return UpdatePlanItemResult.CategoryNotFound
 
             val categoryOwner = foundCategory.user
             if (categoryOwner != null && categoryOwner.id != user.id) {
@@ -137,19 +159,23 @@ class PlanItemService(
             category = foundCategory
         }
 
-        val updated = planItemRepository.save(
-            existing.copy(
-                category = category,
-                description = request.description,
-                plannedDate = request.plannedDate,
-                plannedAmount = request.plannedAmount
+        val updated =
+            planItemRepository.save(
+                existing.copy(
+                    category = category,
+                    description = request.description,
+                    plannedDate = request.plannedDate,
+                    plannedAmount = request.plannedAmount,
+                ),
             )
-        )
 
         return UpdatePlanItemResult.Success(updated.toResponse())
     }
 
-    fun deletePlanItem(user: User, itemId: Long): DeletePlanItemResult {
+    fun deletePlanItem(
+        user: User,
+        itemId: Long,
+    ): DeletePlanItemResult {
         val existing = findById(itemId) ?: return DeletePlanItemResult.ItemNotFound
         if (existing.plan.user.id != user.id) {
             return DeletePlanItemResult.NotOwner
@@ -158,13 +184,14 @@ class PlanItemService(
         return DeletePlanItemResult.Success
     }
 
-    private fun PlanItem.toResponse() = PlanItemResponse(
-        id = id,
-        planId = plan.id,
-        categoryId = category?.id,
-        categoryName = category?.name,
-        description = description,
-        plannedDate = plannedDate,
-        plannedAmount = plannedAmount
-    )
+    private fun PlanItem.toResponse() =
+        PlanItemResponse(
+            id = id,
+            planId = plan.id,
+            categoryId = category?.id,
+            categoryName = category?.name,
+            description = description,
+            plannedDate = plannedDate,
+            plannedAmount = plannedAmount,
+        )
 }

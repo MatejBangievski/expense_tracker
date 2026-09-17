@@ -27,55 +27,66 @@ import java.time.LocalDate
 @RequestMapping("api/budgets")
 class BudgetController(
     private val budgetService: BudgetService,
-    private val currentUserProvider: CurrentUserProvider
+    private val currentUserProvider: CurrentUserProvider,
 ) {
     @GetMapping
     fun list(
         @AuthenticationPrincipal userDetails: UserDetails,
-        @RequestParam month: LocalDate
-    ): List<BudgetResponse> =
-        budgetService.listBudgetsByMonth(currentUserProvider.resolve(userDetails), month)
+        @RequestParam month: LocalDate,
+    ): List<BudgetResponse> = budgetService.listBudgetsByMonth(currentUserProvider.resolve(userDetails), month)
 
     @PostMapping
     fun create(
         @AuthenticationPrincipal userDetails: UserDetails,
-        @RequestBody request: CreateBudgetRequest
+        @RequestBody request: CreateBudgetRequest,
     ): ResponseEntity<*> =
         when (val result = budgetService.createBudget(currentUserProvider.resolve(userDetails), request)) {
             is CreateBudgetResult.Success -> ResponseEntity.ok(result.budget)
-            is CreateBudgetResult.CategoryNotFound -> ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                .body(mapOf("error" to "Category not found"))
+            is CreateBudgetResult.CategoryNotFound ->
+                ResponseEntity
+                    .status(HttpStatus.BAD_REQUEST)
+                    .body(mapOf("error" to "Category not found"))
 
-            is CreateBudgetResult.AlreadyExists -> ResponseEntity.status(HttpStatus.CONFLICT)
-                .body(mapOf("error" to "A budget already exists for this category and month"))
+            is CreateBudgetResult.AlreadyExists ->
+                ResponseEntity
+                    .status(HttpStatus.CONFLICT)
+                    .body(mapOf("error" to "A budget already exists for this category and month"))
         }
 
     @PutMapping("/{id}")
     fun update(
         @AuthenticationPrincipal userDetails: UserDetails,
         @PathVariable id: Long,
-        @RequestBody request: UpdateBudgetRequest
+        @RequestBody request: UpdateBudgetRequest,
     ): ResponseEntity<*> =
         when (val result = budgetService.updateBudget(currentUserProvider.resolve(userDetails), id, request)) {
             is UpdateBudgetResult.Success -> ResponseEntity.ok(result.budget)
-            is UpdateBudgetResult.BudgetNotFound -> ResponseEntity.status(HttpStatus.NOT_FOUND)
-                .body(mapOf("error" to "Budget not found"))
+            is UpdateBudgetResult.BudgetNotFound ->
+                ResponseEntity
+                    .status(HttpStatus.NOT_FOUND)
+                    .body(mapOf("error" to "Budget not found"))
 
-            is UpdateBudgetResult.NotOwner -> ResponseEntity.status(HttpStatus.FORBIDDEN)
-                .body(mapOf("error" to "You do not own this budget"))
+            is UpdateBudgetResult.NotOwner ->
+                ResponseEntity
+                    .status(HttpStatus.FORBIDDEN)
+                    .body(mapOf("error" to "You do not own this budget"))
         }
 
     @DeleteMapping("/{id}")
     fun delete(
         @AuthenticationPrincipal userDetails: UserDetails,
-        @PathVariable id: Long
+        @PathVariable id: Long,
     ): ResponseEntity<*> =
         when (val result = budgetService.deleteBudget(currentUserProvider.resolve(userDetails), id)) {
             is DeleteBudgetResult.Success -> ResponseEntity.noContent().build<Unit>()
-            is DeleteBudgetResult.BudgetNotFound -> ResponseEntity.status(HttpStatus.NOT_FOUND)
-                .body(mapOf("error" to "Budget not found"))
+            is DeleteBudgetResult.BudgetNotFound ->
+                ResponseEntity
+                    .status(HttpStatus.NOT_FOUND)
+                    .body(mapOf("error" to "Budget not found"))
 
-            is DeleteBudgetResult.NotOwner -> ResponseEntity.status(HttpStatus.FORBIDDEN)
-                .body(mapOf("error" to "You do not own this budget"))
+            is DeleteBudgetResult.NotOwner ->
+                ResponseEntity
+                    .status(HttpStatus.FORBIDDEN)
+                    .body(mapOf("error" to "You do not own this budget"))
         }
 }

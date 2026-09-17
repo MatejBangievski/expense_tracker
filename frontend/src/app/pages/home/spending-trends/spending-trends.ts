@@ -84,7 +84,10 @@ export class SpendingTrends {
     this.period.set(period);
   }
 
-  private buildBuckets(expenses: Expense[], range: RangeInfo): { labels: string[]; data: number[] } {
+  private buildBuckets(
+    expenses: Expense[],
+    range: RangeInfo,
+  ): { labels: string[]; data: number[] } {
     if (range.granularity === 'month') {
       const labels: string[] = [];
       const data: number[] = [];
@@ -109,7 +112,10 @@ export class SpendingTrends {
   }
 
   private sumWhere(expenses: Expense[], predicate: (date: string) => boolean): number {
-    return expenses.reduce((total, expense) => (predicate(expense.expenseDate) ? total + expense.amount : total), 0);
+    return expenses.reduce(
+      (total, expense) => (predicate(expense.expenseDate) ? total + expense.amount : total),
+      0,
+    );
   }
 
   private rangeFor(period: TrendPeriod): RangeInfo {
@@ -117,17 +123,32 @@ export class SpendingTrends {
     if (period === 'year') {
       const start = new Date(now.getFullYear(), 0, 1);
       const end = new Date(now.getFullYear(), 11, 31);
-      return { start, end, granularity: 'month', filter: { periodStart: this.iso(start), periodEnd: this.iso(end) } };
+      return {
+        start,
+        end,
+        granularity: 'month',
+        filter: { periodStart: this.iso(start), periodEnd: this.iso(end) },
+      };
     }
     if (period === 'last30') {
       const end = new Date(now);
       const start = new Date(now);
       start.setDate(now.getDate() - 29);
-      return { start, end, granularity: 'day', filter: { periodStart: this.iso(start), periodEnd: this.iso(end) } };
+      return {
+        start,
+        end,
+        granularity: 'day',
+        filter: { periodStart: this.iso(start), periodEnd: this.iso(end) },
+      };
     }
     const start = new Date(now.getFullYear(), now.getMonth(), 1);
     const end = new Date(now.getFullYear(), now.getMonth() + 1, 0);
-    return { start, end, granularity: 'day', filter: { periodStart: this.iso(start), periodEnd: this.iso(end) } };
+    return {
+      start,
+      end,
+      granularity: 'day',
+      filter: { periodStart: this.iso(start), periodEnd: this.iso(end) },
+    };
   }
 
   private iso(date: Date): string {

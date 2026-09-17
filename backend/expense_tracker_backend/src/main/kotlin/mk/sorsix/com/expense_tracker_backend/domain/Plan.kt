@@ -14,11 +14,9 @@ data class Plan(
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     val id: Long = 0,
-
     @ManyToOne
     @JoinColumn(name = "user_id")
     val user: User = User(),
-
     val name: String = "",
     val startDate: LocalDate = LocalDate.now(),
     val endDate: LocalDate = LocalDate.now(),

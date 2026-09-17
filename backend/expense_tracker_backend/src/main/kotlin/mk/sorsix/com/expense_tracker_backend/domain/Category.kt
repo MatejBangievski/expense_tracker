@@ -12,14 +12,11 @@ data class Category(
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     val id: Long = 0,
-
     var name: String = "",
-
     @ManyToOne
     @JoinColumn(name = "parent_category_id")
     val parentCategory: Category? = null,
-
     @ManyToOne
     @JoinColumn(name = "user_id")
-    val user: User? = null
+    val user: User? = null,
 )

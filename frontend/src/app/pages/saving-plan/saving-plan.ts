@@ -12,7 +12,6 @@ import { ChartData, ChartOptions } from 'chart.js';
 import { CHART_DANGER, CHART_TRACK, chartColor } from '../../shared/chart-colors';
 import { Icon } from '../../shared/icon/icon';
 
-
 @Component({
   selector: 'app-saving-plan',
   imports: [RouterLink, CurrencyPipe, Spinner, DatePipe, BaseChartDirective, Icon],
@@ -115,7 +114,9 @@ export class SavingPlan implements OnInit {
 
   readonly percentageIncrease = 10;
   currentSpent = signal(0);
-  minAiBudget = computed(() => Math.ceil(this.currentSpent() * (1 + this.percentageIncrease / 100) * 100) / 100,);
+  minAiBudget = computed(
+    () => Math.ceil(this.currentSpent() * (1 + this.percentageIncrease / 100) * 100) / 100,
+  );
 
   ngOnInit(): void {
     this.reload$.next();

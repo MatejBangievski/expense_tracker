@@ -7,7 +7,7 @@ import org.springframework.stereotype.Component
 
 @Component
 class CurrentUserProvider(
-    private val userRepository: UserRepository
+    private val userRepository: UserRepository,
 ) {
     fun resolve(userDetails: UserDetails): User =
         userRepository.findByEmail(userDetails.username)

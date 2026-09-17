@@ -5,14 +5,22 @@
     <form [formRoot]="budgetForm">
       <div class="mb-3">
         <label for="budgetLimit" class="form-label">Max budget</label>
-        <input id="budgetLimit" type="number" class="form-control" [formField]="budgetForm.budgetLimit" />
+        <input
+          id="budgetLimit"
+          type="number"
+          class="form-control"
+          [formField]="budgetForm.budgetLimit"
+        />
         @if (budgetForm.budgetLimit().touched() && budgetForm.budgetLimit().invalid()) {
           @for (error of budgetForm.budgetLimit().errors(); track error.kind) {
             <div class="text-danger small">{{ error.message }}</div>
           }
         }
         @if (totalSpent() > 0) {
-          <div class="form-text">You've already spent {{ totalSpent() | currency }} this month — the budget can't be lower.</div>
+          <div class="form-text">
+            You've already spent {{ totalSpent() | currency }} this month — the budget can't be
+            lower.
+          </div>
         }
       </div>
 
@@ -75,13 +83,17 @@
                   +
                 </button>
               </div>
-              <span class="limit-spent text-secondary small">Spent {{ row.minLimit | currency }}</span>
+              <span class="limit-spent text-secondary small"
+                >Spent {{ row.minLimit | currency }}</span
+              >
               <button
                 type="button"
                 class="btn btn-outline-danger btn-sm"
                 (click)="removeRow(i)"
                 [disabled]="row.minLimit > 0"
-                [attr.title]="row.minLimit > 0 ? 'Already spent this month — can\'t be removed' : null"
+                [attr.title]="
+                  row.minLimit > 0 ? 'Already spent this month — can\'t be removed' : null
+                "
                 [attr.aria-label]="'Remove ' + row.categoryName"
               >
                 Remove
@@ -98,7 +110,9 @@
       } @else if (remaining() === 0) {
         <div class="alert alert-warning py-2">Budget limit reached.</div>
       } @else {
-        <div class="alert alert-danger py-2">Category limits exceed the budget by {{ -remaining() | currency }}.</div>
+        <div class="alert alert-danger py-2">
+          Category limits exceed the budget by {{ -remaining() | currency }}.
+        </div>
       }
 
       @if (errorMessage()) {
@@ -106,7 +120,16 @@
       }
 
       <div class="d-flex gap-2 mt-3">
-        <button type="submit" class="btn btn-primary" [disabled]="!budgetForm().valid() || budgetForm().submitting() || remaining() < 0 || budgetModel().budgetLimit < totalSpent()">
+        <button
+          type="submit"
+          class="btn btn-primary"
+          [disabled]="
+            !budgetForm().valid() ||
+            budgetForm().submitting() ||
+            remaining() < 0 ||
+            budgetModel().budgetLimit < totalSpent()
+          "
+        >
           @if (budgetForm().submitting()) {
             Saving…
           } @else {

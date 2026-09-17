@@ -35,13 +35,25 @@ class PeriodComparisonService(
     private val log = LoggerFactory.getLogger(javaClass)
 
     @Transactional
-    fun compareWithPreviousPeriod(user: User, periodType: PeriodType, date: LocalDate? = null, useAi: Boolean = false): GeneratePeriodComparisonResult {
+    fun compareWithPreviousPeriod(
+        user: User,
+        periodType: PeriodType,
+        date: LocalDate? = null,
+        useAi: Boolean = false,
+    ): GeneratePeriodComparisonResult {
         val current = periodType.startOf(date ?: LocalDate.now(clock))
         return compare(user, periodType, current, periodType, periodType.previous(current), useAi)
     }
 
     @Transactional
-    fun compare(user: User, currentPeriodType: PeriodType, currentDate: LocalDate, previousPeriodType: PeriodType, previousDate: LocalDate, useAi: Boolean = false): GeneratePeriodComparisonResult {
+    fun compare(
+        user: User,
+        currentPeriodType: PeriodType,
+        currentDate: LocalDate,
+        previousPeriodType: PeriodType,
+        previousDate: LocalDate,
+        useAi: Boolean = false,
+    ): GeneratePeriodComparisonResult {
         if (currentPeriodType != previousPeriodType) {
             return GeneratePeriodComparisonResult.InadequatePeriods
         }
@@ -57,15 +69,16 @@ class PeriodComparisonService(
         val currentSummary = findOrCreateSummary(user, periodType, current)
         val previousSummary = findOrCreateSummary(user, periodType, previous)
 
-        var comparison = periodComparisonRepository
-            .findByCurrentSummaryIdAndPreviousSummaryId(currentSummary.summaryId, previousSummary.summaryId)
-            ?: periodComparisonRepository.save(
-                PeriodComparison(
-                    user = user,
-                    currentSummary = periodSummaryRepository.getReferenceById(currentSummary.summaryId),
-                    previousSummary = periodSummaryRepository.getReferenceById(previousSummary.summaryId),
+        var comparison =
+            periodComparisonRepository
+                .findByCurrentSummaryIdAndPreviousSummaryId(currentSummary.summaryId, previousSummary.summaryId)
+                ?: periodComparisonRepository.save(
+                    PeriodComparison(
+                        user = user,
+                        currentSummary = periodSummaryRepository.getReferenceById(currentSummary.summaryId),
+                        previousSummary = periodSummaryRepository.getReferenceById(previousSummary.summaryId),
+                    ),
                 )
-            )
 
         if (useAi) {
             generateMessage(user, currentSummary, previousSummary)?.let {
@@ -84,11 +97,14 @@ class PeriodComparisonService(
                 previousTotalSpent = previousSummary.totalSpent,
                 comparisonMessage = comparison.comparisonMessage,
                 categories = categoryComparisons(currentSummary, previousSummary),
-            )
+            ),
         )
     }
 
-    private fun categoryComparisons(current: PeriodSummaryResponse, previous: PeriodSummaryResponse): List<CategoryComparison> {
+    private fun categoryComparisons(
+        current: PeriodSummaryResponse,
+        previous: PeriodSummaryResponse,
+    ): List<CategoryComparison> {
         val currentByName = current.categories.associateBy { it.categoryName }
         val previousByName = previous.categories.associateBy { it.categoryName }
         return (currentByName.keys + previousByName.keys)
@@ -98,11 +114,14 @@ class PeriodComparisonService(
                     currentAmount = currentByName[name]?.totalAmount ?: BigDecimal.ZERO,
                     previousAmount = previousByName[name]?.totalAmount ?: BigDecimal.ZERO,
                 )
-            }
-            .sortedByDescending { it.currentAmount }
+            }.sortedByDescending { it.currentAmount }
     }
 
-    private fun findOrCreateSummary(user: User, periodType: PeriodType, date: LocalDate): PeriodSummaryResponse {
+    private fun findOrCreateSummary(
+        user: User,
+        periodType: PeriodType,
+        date: LocalDate,
+    ): PeriodSummaryResponse {
         val periodStart = periodType.startOf(date)
         val complete = periodType.endOf(periodStart).isBefore(LocalDate.now(clock))
         if (complete) {
@@ -118,26 +137,37 @@ class PeriodComparisonService(
         }
     }
 
-    private fun generateMessage(user: User, current: PeriodSummaryResponse, previous: PeriodSummaryResponse): String? = try {
-        userChatClientProvider.forUser(user).prompt()
-            .system(aiPrompts.periodComparison)
-            .user(buildPrompt(current, previous))
-            .call()
-            .entity(GeminiComparisonResult::class.java)
-            ?.takeIf { it.success }
-            ?.comparisonMessage
-    } catch (ex: Exception) {
-        log.error("Gemini comparison call failed for userId={}", user.id, ex)
-        null
-    }
+    private fun generateMessage(
+        user: User,
+        current: PeriodSummaryResponse,
+        previous: PeriodSummaryResponse,
+    ): String? =
+        try {
+            userChatClientProvider
+                .forUser(user)
+                .prompt()
+                .system(aiPrompts.periodComparison)
+                .user(buildPrompt(current, previous))
+                .call()
+                .entity(GeminiComparisonResult::class.java)
+                ?.takeIf { it.success }
+                ?.comparisonMessage
+        } catch (ex: Exception) {
+            log.error("Gemini comparison call failed for userId={}", user.id, ex)
+            null
+        }
 
-    private fun buildPrompt(current: PeriodSummaryResponse, previous: PeriodSummaryResponse): String = buildString {
-        appendLine("=== CURRENT PERIOD ===")
-        appendPeriod(current)
-        appendLine()
-        appendLine("=== EARLIER PERIOD (compare against this) ===")
-        appendPeriod(previous)
-    }
+    private fun buildPrompt(
+        current: PeriodSummaryResponse,
+        previous: PeriodSummaryResponse,
+    ): String =
+        buildString {
+            appendLine("=== CURRENT PERIOD ===")
+            appendPeriod(current)
+            appendLine()
+            appendLine("=== EARLIER PERIOD (compare against this) ===")
+            appendPeriod(previous)
+        }
 
     private fun StringBuilder.appendPeriod(summary: PeriodSummaryResponse) {
         val start = summary.periodStart
@@ -162,11 +192,12 @@ class PeriodComparisonService(
         summary.categories.forEach { category ->
             appendLine("- ${category.categoryName}: ${category.totalAmount.money()} across ${category.expenseCount} expense(s)")
             category.subcategories.forEach { sub ->
-                val label = if (sub.categoryId == category.categoryId) {
-                    "${sub.categoryName} (spent directly on this category)"
-                } else {
-                    sub.categoryName
-                }
+                val label =
+                    if (sub.categoryId == category.categoryId) {
+                        "${sub.categoryName} (spent directly on this category)"
+                    } else {
+                        sub.categoryName
+                    }
                 appendLine("    - $label: ${sub.totalAmount.money()} across ${sub.expenseCount} expense(s)")
             }
         }

@@ -20,13 +20,16 @@ class PeriodSummaryController(
     private val periodSummaryService: PeriodSummaryService,
     private val currentUserProvider: CurrentUserProvider,
 ) {
-
     @GetMapping("/current")
-    fun current(@AuthenticationPrincipal userDetails: UserDetails): ResponseEntity<*> =
+    fun current(
+        @AuthenticationPrincipal userDetails: UserDetails,
+    ): ResponseEntity<*> =
         when (val result = periodSummaryService.currentSpending(currentUserProvider.resolve(userDetails).id)) {
             is CurrentSpendingResult.Success -> ResponseEntity.ok(result.summary)
-            is CurrentSpendingResult.UserNotFound -> ResponseEntity.status(HttpStatus.NOT_FOUND)
-                .body(mapOf("error" to "User not found"))
+            is CurrentSpendingResult.UserNotFound ->
+                ResponseEntity
+                    .status(HttpStatus.NOT_FOUND)
+                    .body(mapOf("error" to "User not found"))
         }
 
     @GetMapping
@@ -36,7 +39,9 @@ class PeriodSummaryController(
     ): ResponseEntity<*> =
         when (val result = periodSummaryService.availablePeriods(currentUserProvider.resolve(userDetails).id, periodType)) {
             is AvailablePeriodsResult.Success -> ResponseEntity.ok(result.periods)
-            is AvailablePeriodsResult.UserNotFound -> ResponseEntity.status(HttpStatus.NOT_FOUND)
-                .body(mapOf("error" to "User not found"))
+            is AvailablePeriodsResult.UserNotFound ->
+                ResponseEntity
+                    .status(HttpStatus.NOT_FOUND)
+                    .body(mapOf("error" to "User not found"))
         }
 }

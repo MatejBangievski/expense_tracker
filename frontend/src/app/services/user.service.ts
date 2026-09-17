@@ -13,9 +13,9 @@ export class UserService {
   }
 
   getCurrentUserResult(): Observable<Result<User>> {
-    return this.http.get<User>(`/api/users/me`).pipe(
-      map((result) => ({ data: result, loading: false })),
-    );
+    return this.http
+      .get<User>(`/api/users/me`)
+      .pipe(map((result) => ({ data: result, loading: false })));
   }
 
   updateProfile(request: UpdateUserRequest) {

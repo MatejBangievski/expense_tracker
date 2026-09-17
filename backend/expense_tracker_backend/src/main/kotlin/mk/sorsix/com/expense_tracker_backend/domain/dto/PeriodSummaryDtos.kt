@@ -4,7 +4,6 @@ import mk.sorsix.com.expense_tracker_backend.domain.PeriodType
 import java.math.BigDecimal
 import java.time.LocalDate
 
-
 data class PeriodSummaryResponse(
     val summaryId: Long,
     val userId: Long,

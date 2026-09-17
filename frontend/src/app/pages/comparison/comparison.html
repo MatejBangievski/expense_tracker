@@ -1,7 +1,9 @@
 <div class="d-flex justify-content-between align-items-start mb-4 flex-wrap gap-2">
   <div>
     <h1 class="h3 mb-1">Compare periods</h1>
-    <p class="text-body-secondary mb-0">See how your spending changed between two periods, by category.</p>
+    <p class="text-body-secondary mb-0">
+      See how your spending changed between two periods, by category.
+    </p>
   </div>
 </div>
 
@@ -28,22 +30,42 @@
         <div class="row g-2 align-items-end">
           <div class="col">
             <label for="periodA" class="form-label">Period</label>
-            <select id="periodA" class="form-select" [value]="periodA()" (change)="periodA.set($any($event.target).value)">
+            <select
+              id="periodA"
+              class="form-select"
+              [value]="periodA()"
+              (change)="periodA.set($any($event.target).value)"
+            >
               @for (p of optionsA(); track p.periodStart) {
-                <option [value]="p.periodStart">{{ label(p.periodStart, periodType()) }} · {{ p.totalSpent | currency }}</option>
+                <option [value]="p.periodStart">
+                  {{ label(p.periodStart, periodType()) }} · {{ p.totalSpent | currency }}
+                </option>
               }
             </select>
           </div>
           <div class="col-auto">
-            <button type="button" class="btn btn-outline-secondary" (click)="swapPeriods()" aria-label="Swap periods" [disabled]="periods().length < 2">
+            <button
+              type="button"
+              class="btn btn-outline-secondary"
+              (click)="swapPeriods()"
+              aria-label="Swap periods"
+              [disabled]="periods().length < 2"
+            >
               <app-icon name="swap" size="1.1rem" />
             </button>
           </div>
           <div class="col">
             <label for="periodB" class="form-label">Compare with</label>
-            <select id="periodB" class="form-select" [value]="periodB()" (change)="periodB.set($any($event.target).value)">
+            <select
+              id="periodB"
+              class="form-select"
+              [value]="periodB()"
+              (change)="periodB.set($any($event.target).value)"
+            >
               @for (p of optionsB(); track p.periodStart) {
-                <option [value]="p.periodStart">{{ label(p.periodStart, periodType()) }} · {{ p.totalSpent | currency }}</option>
+                <option [value]="p.periodStart">
+                  {{ label(p.periodStart, periodType()) }} · {{ p.totalSpent | currency }}
+                </option>
               }
             </select>
           </div>
@@ -52,20 +74,37 @@
 
       <div class="col-12 col-lg-auto">
         <div class="form-check">
-          <input id="useAi" type="checkbox" class="form-check-input" [checked]="useAi()" [disabled]="!hasApiKey()" (change)="useAi.set($any($event.target).checked)" />
+          <input
+            id="useAi"
+            type="checkbox"
+            class="form-check-input"
+            [checked]="useAi()"
+            [disabled]="!hasApiKey()"
+            (change)="useAi.set($any($event.target).checked)"
+          />
           <label for="useAi" class="form-check-label">Use AI insight</label>
         </div>
-        <button type="button" class="btn btn-primary mt-2" (click)="compare()" [disabled]="loading() || periods().length < 2">
+        <button
+          type="button"
+          class="btn btn-primary mt-2"
+          (click)="compare()"
+          [disabled]="loading() || periods().length < 2"
+        >
           {{ loading() ? 'Comparing…' : 'Compare' }}
         </button>
       </div>
     </div>
 
     @if (periods().length < 2) {
-      <p class="text-body-secondary small mt-3 mb-0">Not enough periods with recorded spending to compare yet.</p>
+      <p class="text-body-secondary small mt-3 mb-0">
+        Not enough periods with recorded spending to compare yet.
+      </p>
     }
     @if (!hasApiKey()) {
-      <p class="text-body-secondary small mt-3 mb-0">AI insight needs a Gemini API key. <a routerLink="/profile">Add your API key from your profile</a>.</p>
+      <p class="text-body-secondary small mt-3 mb-0">
+        AI insight needs a Gemini API key.
+        <a routerLink="/profile">Add your API key from your profile</a>.
+      </p>
     }
     @if (error()) {
       <div class="alert alert-danger py-2 mt-3 mb-0">{{ error() }}</div>
@@ -82,9 +121,13 @@
     <div class="col-6 col-lg-3">
       <div class="card shadow-sm h-100">
         <div class="card-body p-3 d-flex align-items-center gap-3">
-          <span class="stat-icon bg-primary-subtle text-primary"><app-icon name="wallet" size="1.6rem" /></span>
+          <span class="stat-icon bg-primary-subtle text-primary"
+            ><app-icon name="wallet" size="1.6rem"
+          /></span>
           <div class="min-w-0">
-            <p class="text-body-secondary small mb-1 text-truncate">{{ label(r.currentPeriodStart, r.periodType) }}</p>
+            <p class="text-body-secondary small mb-1 text-truncate">
+              {{ label(r.currentPeriodStart, r.periodType) }}
+            </p>
             <p class="h5 mb-0">{{ r.currentTotalSpent | currency }}</p>
           </div>
         </div>
@@ -93,9 +136,13 @@
     <div class="col-6 col-lg-3">
       <div class="card shadow-sm h-100">
         <div class="card-body p-3 d-flex align-items-center gap-3">
-          <span class="stat-icon bg-success-subtle text-success"><app-icon name="receipt" size="1.6rem" /></span>
+          <span class="stat-icon bg-success-subtle text-success"
+            ><app-icon name="receipt" size="1.6rem"
+          /></span>
           <div class="min-w-0">
-            <p class="text-body-secondary small mb-1 text-truncate">{{ label(r.previousPeriodStart, r.periodType) }}</p>
+            <p class="text-body-secondary small mb-1 text-truncate">
+              {{ label(r.previousPeriodStart, r.periodType) }}
+            </p>
             <p class="h5 mb-0">{{ r.previousTotalSpent | currency }}</p>
           </div>
         </div>
@@ -104,14 +151,22 @@
     <div class="col-6 col-lg-3">
       <div class="card shadow-sm h-100">
         <div class="card-body p-3 d-flex align-items-center gap-3">
-          <span class="stat-icon bg-danger-subtle text-danger"><app-icon name="trending-up" size="1.6rem" /></span>
+          <span class="stat-icon bg-danger-subtle text-danger"
+            ><app-icon name="trending-up" size="1.6rem"
+          /></span>
           <div class="min-w-0">
             <p class="text-body-secondary small mb-1">Change</p>
             @let totalPct = percentChange(r.currentTotalSpent, r.previousTotalSpent);
-            <p class="h5 mb-0" [class.text-danger]="totalDelta() > 0" [class.text-success]="totalDelta() < 0">
+            <p
+              class="h5 mb-0"
+              [class.text-danger]="totalDelta() > 0"
+              [class.text-success]="totalDelta() < 0"
+            >
               {{ totalDelta() | currency }}
               @if (totalPct !== null) {
-                <span class="small">({{ totalPct > 0 ? '+' : '' }}{{ totalPct | number: '1.0-1' }}%)</span>
+                <span class="small"
+                  >({{ totalPct > 0 ? '+' : '' }}{{ totalPct | number: '1.0-1' }}%)</span
+                >
               }
             </p>
           </div>
@@ -121,7 +176,9 @@
     <div class="col-6 col-lg-3">
       <div class="card shadow-sm h-100">
         <div class="card-body p-3 d-flex align-items-center gap-3">
-          <span class="stat-icon bg-warning-subtle text-warning-emphasis"><app-icon name="calendar" size="1.6rem" /></span>
+          <span class="stat-icon bg-warning-subtle text-warning-emphasis"
+            ><app-icon name="calendar" size="1.6rem"
+          /></span>
           <div class="min-w-0">
             <p class="text-body-secondary small mb-1">Average / day</p>
             <p class="h5 mb-0">{{ currentAvgPerDay() | currency }}</p>

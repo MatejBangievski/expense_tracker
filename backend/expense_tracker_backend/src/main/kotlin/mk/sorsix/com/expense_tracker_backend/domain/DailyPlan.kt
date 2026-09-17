@@ -9,11 +9,9 @@ import java.time.LocalDate
 data class DailyPlan(
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     val id: Long = 0,
-
     @ManyToOne
     @JoinColumn(name = "plan_id")
     val plan: Plan = Plan(),
-
     val date: LocalDate = LocalDate.now(),
-    val allocatedAmount: BigDecimal = BigDecimal.ZERO
+    val allocatedAmount: BigDecimal = BigDecimal.ZERO,
 )

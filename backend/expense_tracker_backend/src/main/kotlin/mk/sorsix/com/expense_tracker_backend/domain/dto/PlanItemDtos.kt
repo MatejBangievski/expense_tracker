@@ -8,7 +8,7 @@ data class CreatePlanItemRequest(
     val description: String,
     val plannedDate: LocalDate,
     val plannedAmount: BigDecimal,
-    val confirmOverBudget: Boolean? = false
+    val confirmOverBudget: Boolean? = false,
 )
 
 data class UpdatePlanItemRequest(
@@ -16,7 +16,7 @@ data class UpdatePlanItemRequest(
     val description: String,
     val plannedDate: LocalDate,
     val plannedAmount: BigDecimal,
-    val confirmOverBudget: Boolean? = false
+    val confirmOverBudget: Boolean? = false,
 )
 
 data class PlanItemResponse(
@@ -26,5 +26,5 @@ data class PlanItemResponse(
     val categoryName: String?,
     val description: String,
     val plannedDate: LocalDate,
-    val plannedAmount: BigDecimal
+    val plannedAmount: BigDecimal,
 )

@@ -14,16 +14,16 @@ import org.springframework.web.bind.annotation.*
 @RequestMapping("/api/plans/{planId}/daily")
 class DailyPlanController(
     private val dailyPlanService: DailyPlanService,
-    private val currentUserProvider: CurrentUserProvider
+    private val currentUserProvider: CurrentUserProvider,
 ) {
-
     @GetMapping
     fun list(
         @AuthenticationPrincipal userDetails: UserDetails,
-        @PathVariable planId: Long
+        @PathVariable planId: Long,
     ): ResponseEntity<*> {
-        val items = dailyPlanService.listDailyPlans(currentUserProvider.resolve(userDetails), planId)
-            ?: return ResponseEntity.status(HttpStatus.NOT_FOUND).body(mapOf("error" to "Plan not found"))
+        val items =
+            dailyPlanService.listDailyPlans(currentUserProvider.resolve(userDetails), planId)
+                ?: return ResponseEntity.status(HttpStatus.NOT_FOUND).body(mapOf("error" to "Plan not found"))
         return ResponseEntity.ok(items)
     }
 
@@ -31,25 +31,37 @@ class DailyPlanController(
     fun create(
         @AuthenticationPrincipal userDetails: UserDetails,
         @PathVariable planId: Long,
-        @RequestBody request: DailyPlanRequest
+        @RequestBody request: DailyPlanRequest,
     ): ResponseEntity<*> =
-        when (val result =
-            dailyPlanService.createDailyPlan(currentUserProvider.resolve(userDetails), planId, request)) {
+        when (
+            val result =
+                dailyPlanService.createDailyPlan(currentUserProvider.resolve(userDetails), planId, request)
+        ) {
             is CreateDailyPlanResult.Success -> ResponseEntity.ok(result.dailyPlan)
-            is CreateDailyPlanResult.PlanNotFound -> ResponseEntity.status(HttpStatus.NOT_FOUND)
-                .body(mapOf("error" to "Plan not found"))
+            is CreateDailyPlanResult.PlanNotFound ->
+                ResponseEntity
+                    .status(HttpStatus.NOT_FOUND)
+                    .body(mapOf("error" to "Plan not found"))
 
-            is CreateDailyPlanResult.NotOwner -> ResponseEntity.status(HttpStatus.FORBIDDEN)
-                .body(mapOf("error" to "You do not own this plan"))
+            is CreateDailyPlanResult.NotOwner ->
+                ResponseEntity
+                    .status(HttpStatus.FORBIDDEN)
+                    .body(mapOf("error" to "You do not own this plan"))
 
-            is CreateDailyPlanResult.DateOutsideRange -> ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                .body(mapOf("error" to "Date is outside the plan's date range"))
+            is CreateDailyPlanResult.DateOutsideRange ->
+                ResponseEntity
+                    .status(HttpStatus.BAD_REQUEST)
+                    .body(mapOf("error" to "Date is outside the plan's date range"))
 
-            is CreateDailyPlanResult.AlreadyExists -> ResponseEntity.status(HttpStatus.CONFLICT)
-                .body(mapOf("error" to "An allocation already exists for this date"))
+            is CreateDailyPlanResult.AlreadyExists ->
+                ResponseEntity
+                    .status(HttpStatus.CONFLICT)
+                    .body(mapOf("error" to "An allocation already exists for this date"))
 
-            is CreateDailyPlanResult.OverBudgetWarning -> ResponseEntity.status(HttpStatus.CONFLICT)
-                .body(mapOf("error" to "over_budget", "remainingBudget" to result.remainingBudget))
+            is CreateDailyPlanResult.OverBudgetWarning ->
+                ResponseEntity
+                    .status(HttpStatus.CONFLICT)
+                    .body(mapOf("error" to "over_budget", "remainingBudget" to result.remainingBudget))
         }
 
     @PutMapping("/{dailyPlanId}")
@@ -57,30 +69,40 @@ class DailyPlanController(
         @AuthenticationPrincipal userDetails: UserDetails,
         @PathVariable planId: Long,
         @PathVariable dailyPlanId: Long,
-        @RequestBody request: DailyPlanRequest
+        @RequestBody request: DailyPlanRequest,
     ): ResponseEntity<*> =
-        when (val result =
-            dailyPlanService.updateDailyPlan(currentUserProvider.resolve(userDetails), dailyPlanId, request)) {
+        when (
+            val result =
+                dailyPlanService.updateDailyPlan(currentUserProvider.resolve(userDetails), dailyPlanId, request)
+        ) {
             is UpdateDailyPlanResult.Success -> ResponseEntity.ok(result.dailyPlan)
-            is UpdateDailyPlanResult.DailyPlanNotFound -> ResponseEntity.status(HttpStatus.NOT_FOUND)
-                .body(mapOf("error" to "Daily allocation not found"))
+            is UpdateDailyPlanResult.DailyPlanNotFound ->
+                ResponseEntity
+                    .status(HttpStatus.NOT_FOUND)
+                    .body(mapOf("error" to "Daily allocation not found"))
 
-            is UpdateDailyPlanResult.NotOwner -> ResponseEntity.status(HttpStatus.FORBIDDEN)
-                .body(mapOf("error" to "You do not own this plan"))
+            is UpdateDailyPlanResult.NotOwner ->
+                ResponseEntity
+                    .status(HttpStatus.FORBIDDEN)
+                    .body(mapOf("error" to "You do not own this plan"))
         }
 
     @DeleteMapping("/{dailyPlanId}")
     fun delete(
         @AuthenticationPrincipal userDetails: UserDetails,
         @PathVariable planId: Long,
-        @PathVariable dailyPlanId: Long
+        @PathVariable dailyPlanId: Long,
     ): ResponseEntity<*> =
         when (val result = dailyPlanService.deleteDailyPlan(currentUserProvider.resolve(userDetails), dailyPlanId)) {
             is DeleteDailyPlanResult.Success -> ResponseEntity.noContent().build<Unit>()
-            is DeleteDailyPlanResult.DailyPlanNotFound -> ResponseEntity.status(HttpStatus.NOT_FOUND)
-                .body(mapOf("error" to "Daily allocation not found"))
+            is DeleteDailyPlanResult.DailyPlanNotFound ->
+                ResponseEntity
+                    .status(HttpStatus.NOT_FOUND)
+                    .body(mapOf("error" to "Daily allocation not found"))
 
-            is DeleteDailyPlanResult.NotOwner -> ResponseEntity.status(HttpStatus.FORBIDDEN)
-                .body(mapOf("error" to "You do not own this plan"))
+            is DeleteDailyPlanResult.NotOwner ->
+                ResponseEntity
+                    .status(HttpStatus.FORBIDDEN)
+                    .body(mapOf("error" to "You do not own this plan"))
         }
 }

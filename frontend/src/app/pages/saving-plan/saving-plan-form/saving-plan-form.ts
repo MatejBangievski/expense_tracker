@@ -57,14 +57,18 @@ export class SavingPlanForm implements OnInit {
           this.errorMessage.set('');
           const request: ManualSavingPlanRequest = {
             budgetLimit: form().value().budgetLimit,
-            categoryLimits: this.rows().map((r) => ({ categoryName: r.categoryName, suggestedLimit: r.suggestedLimit })),
+            categoryLimits: this.rows().map((r) => ({
+              categoryName: r.categoryName,
+              suggestedLimit: r.suggestedLimit,
+            })),
           };
           try {
             await firstValueFrom(this.savingPlanService.createManual(request));
             await this.router.navigate(['/saving-plan']);
           } catch (err) {
             this.errorMessage.set(
-              (err as HttpErrorResponse)?.error?.error ?? 'Could not save the plan. Please try again.',
+              (err as HttpErrorResponse)?.error?.error ??
+                'Could not save the plan. Please try again.',
             );
           }
         },
@@ -86,7 +90,9 @@ export class SavingPlanForm implements OnInit {
           return;
         }
         this.plan = plan;
-        const liveSpentByName = new Map(spending.categories.map((c) => [c.categoryName, c.totalAmount]));
+        const liveSpentByName = new Map(
+          spending.categories.map((c) => [c.categoryName, c.totalAmount]),
+        );
         const rows: LimitRow[] = plan.categoryLimits.map((cl) => {
           const liveSpent = liveSpentByName.get(cl.categoryName) ?? 0;
           liveSpentByName.delete(cl.categoryName);
@@ -109,7 +115,11 @@ export class SavingPlanForm implements OnInit {
         this.rows.set(
           spending.categories
             .filter((c) => c.totalAmount > 0)
-            .map((c) => ({ categoryName: c.categoryName, suggestedLimit: c.totalAmount, minLimit: c.totalAmount })),
+            .map((c) => ({
+              categoryName: c.categoryName,
+              suggestedLimit: c.totalAmount,
+              minLimit: c.totalAmount,
+            })),
         );
         this.budgetModel.set({ budgetLimit: spending.totalSpent });
       });
@@ -141,7 +151,9 @@ export class SavingPlanForm implements OnInit {
 
       const add = delta > 0 ? Math.max(0, Math.min(delta, remaining)) : delta;
       return rows.map((row, i) =>
-        i === index ? { ...row, suggestedLimit: Math.max(row.minLimit, row.suggestedLimit + add) } : row,
+        i === index
+          ? { ...row, suggestedLimit: Math.max(row.minLimit, row.suggestedLimit + add) }
+          : row,
       );
     });
   }

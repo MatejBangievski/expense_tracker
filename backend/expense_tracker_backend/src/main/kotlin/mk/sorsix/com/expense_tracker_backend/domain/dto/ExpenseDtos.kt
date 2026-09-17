@@ -9,7 +9,7 @@ data class CreateExpenseRequest(
     val expenseDate: LocalDate,
     val description: String? = null,
     val planId: Long? = null,
-    val confirmOverBudget: Boolean? = false
+    val confirmOverBudget: Boolean? = false,
 )
 
 data class UpdateExpenseRequest(
@@ -18,7 +18,7 @@ data class UpdateExpenseRequest(
     val expenseDate: LocalDate,
     val description: String? = null,
     val planId: Long? = null,
-    val confirmOverBudget: Boolean? = false
+    val confirmOverBudget: Boolean? = false,
 )
 
 data class ExpenseResponse(
@@ -28,24 +28,25 @@ data class ExpenseResponse(
     val planId: Long? = null,
     val amount: BigDecimal,
     val expenseDate: LocalDate,
-    val description: String?
+    val description: String?,
 )
+
 data class ExpenseFilter(
     val categoryName: String? = null,
     val periodStart: LocalDate? = null,
     val periodEnd: LocalDate? = null,
-    val search: String? = null
+    val search: String? = null,
 )
 
 data class TopCategoryResponse(
     val categoryId: Long,
     val categoryName: String,
     val totalSpent: BigDecimal,
-    val share: Double
+    val share: Double,
 )
 
 data class TotalResponse(
-    val total: BigDecimal
+    val total: BigDecimal,
 )
 
 interface CategoryTotalProjection {

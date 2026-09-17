@@ -11,7 +11,6 @@ import org.springframework.stereotype.Component
 import java.time.Clock
 import java.time.LocalDate
 
-
 @Component
 class PeriodSummaryGenerationJob(
     private val userRepository: UserRepository,
@@ -35,12 +34,18 @@ class PeriodSummaryGenerationJob(
         if (report.failed > 0) {
             log.error(
                 "{} summary run for {} finished with {} failure(s): {}",
-                periodType, report.periodStart, report.failed, report.failedUserIds
+                periodType,
+                report.periodStart,
+                report.failed,
+                report.failedUserIds,
             )
         }
     }
 
-    fun runForAllUsers(periodType: PeriodType, periodStart: LocalDate): PeriodSummaryRunReport {
+    fun runForAllUsers(
+        periodType: PeriodType,
+        periodStart: LocalDate,
+    ): PeriodSummaryRunReport {
         val normalizedStart = periodType.startOf(periodStart)
         val startedAt = System.currentTimeMillis()
 

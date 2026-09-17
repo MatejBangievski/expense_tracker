@@ -7,21 +7,16 @@ import java.math.BigDecimal
 data class Budget(
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     val id: Long = 0,
-
     @ManyToOne
     @JoinColumn(name = "user_id")
     val user: User = User(),
-
     @ManyToOne
     @JoinColumn(name = "category_id")
     val category: Category = Category(),
-
     @ManyToOne
     @JoinColumn(name = "monthly_saving_id")
     val monthlySaving: MonthlySaving = MonthlySaving(),
-
     val monthlyLimit: BigDecimal = BigDecimal.ZERO,
     val actualSpent: BigDecimal? = null,
     val reason: String? = null,
-
 )

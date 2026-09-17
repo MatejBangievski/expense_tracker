@@ -13,8 +13,9 @@ export class CategoryService {
   }
 
   getCategoriesResult(): Observable<Result<Category[]>> {
-    return this.http.get<Category[]>(`/api/categories`).pipe
-    (map((result) => ({ data: result, loading: false })));
+    return this.http
+      .get<Category[]>(`/api/categories`)
+      .pipe(map((result) => ({ data: result, loading: false })));
   }
 
   save(request: CategoryRequest) {

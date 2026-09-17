@@ -56,8 +56,12 @@ export class PlanForm implements OnInit {
     totalBudget: 0,
   });
 
-  startDateValue = computed(() => (this.planModel().startDate ? new Date(this.planModel().startDate) : null));
-  endDateValue = computed(() => (this.planModel().endDate ? new Date(this.planModel().endDate) : null));
+  startDateValue = computed(() =>
+    this.planModel().startDate ? new Date(this.planModel().startDate) : null,
+  );
+  endDateValue = computed(() =>
+    this.planModel().endDate ? new Date(this.planModel().endDate) : null,
+  );
 
   onStartDateChange(event: MatDatepickerInputEvent<Date>) {
     const start = event.value;
@@ -112,7 +116,9 @@ export class PlanForm implements OnInit {
       .pipe(
         map((params) => params.get('id')),
         mergeMap((id) =>
-          id ? this.service.getPlans().pipe(map((all) => all.find((p) => p.id === +id))) : of(undefined),
+          id
+            ? this.service.getPlans().pipe(map((all) => all.find((p) => p.id === +id)))
+            : of(undefined),
         ),
       )
       .subscribe((plan) => {

@@ -8,7 +8,9 @@
           <span class="h4 fw-bold mb-0" [class.text-danger]="more()" [class.text-success]="!more()">
             {{ more() ? '↑' : '↓' }} {{ deltaAbs() | percent: '1.0-1' }}
           </span>
-          <span class="text-body-secondary small">{{ more() ? 'more' : 'less' }} spent than last month</span>
+          <span class="text-body-secondary small"
+            >{{ more() ? 'more' : 'less' }} spent than last month</span
+          >
         } @else {
           <span class="h4 fw-bold mb-0">—</span>
           <span class="text-body-secondary small">No spending last month</span>

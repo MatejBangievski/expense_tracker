@@ -3,6 +3,8 @@
 <td class="text-body-secondary">{{ expense().description }}</td>
 <td class="text-end fw-medium">{{ expense().amount | currency }}</td>
 <td class="text-end text-nowrap">
-  <a [routerLink]="['/expenses/edit', expense().id]" class="btn btn-outline-secondary btn-sm me-1">Edit</a>
+  <a [routerLink]="['/expenses/edit', expense().id]" class="btn btn-outline-secondary btn-sm me-1"
+    >Edit</a
+  >
   <button type="button" class="btn btn-outline-danger btn-sm" (click)="onDelete()">Delete</button>
 </td>

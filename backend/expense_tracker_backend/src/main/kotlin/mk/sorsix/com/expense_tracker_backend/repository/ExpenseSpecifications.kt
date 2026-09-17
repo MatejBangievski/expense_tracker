@@ -6,9 +6,7 @@ import org.springframework.data.jpa.domain.Specification
 import java.time.LocalDate
 
 object ExpenseSpecifications {
-
-    fun belongsToUser(userId: Long): Specification<Expense> =
-        Specification { root, _, cb -> cb.equal(root.get<Long>("user").get<Long>("id"), userId) }
+    fun belongsToUser(userId: Long): Specification<Expense> = Specification { root, _, cb -> cb.equal(root.get<Long>("user").get<Long>("id"), userId) }
 
     fun categoryNameEquals(categoryName: String?): Specification<Expense>? =
         categoryName?.takeIf { it.isNotBlank() }?.let {
@@ -17,10 +15,15 @@ object ExpenseSpecifications {
             }
         }
 
-    fun betweenDates(start: LocalDate?, end: LocalDate?): Specification<Expense>? =
+    fun betweenDates(
+        start: LocalDate?,
+        end: LocalDate?,
+    ): Specification<Expense>? =
         if (start != null && end != null) {
             Specification { root, _, cb -> cb.between(root.get("expenseDate"), start, end) }
-        } else null
+        } else {
+            null
+        }
 
     fun descriptionContains(search: String?): Specification<Expense>? =
         search?.takeIf { it.isNotBlank() }?.let {

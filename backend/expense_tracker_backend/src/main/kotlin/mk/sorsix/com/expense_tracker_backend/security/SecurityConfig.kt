@@ -12,12 +12,10 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 
 @Configuration
 class SecurityConfig(
-    private val jwtAuthFilter: JwtAuthFilter
-)  {
-
+    private val jwtAuthFilter: JwtAuthFilter,
+) {
     @Bean
     fun passwordEncoder(): PasswordEncoder = BCryptPasswordEncoder()
-
 
     @Bean
     fun securityFilterChain(http: HttpSecurity): SecurityFilterChain {
@@ -25,23 +23,32 @@ class SecurityConfig(
             .csrf { it.disable() }
             .sessionManagement { it.sessionCreationPolicy(SessionCreationPolicy.STATELESS) }
             .authorizeHttpRequests {
-                it.requestMatchers("/api/auth/**").permitAll()
-                    .requestMatchers("/api/expenses/**").authenticated()
-                    .requestMatchers("/api/budgets/**").authenticated()
-                    .requestMatchers("/api/plans/**").authenticated()
-                    .requestMatchers("/api/categories/**").authenticated()
-                    .requestMatchers("/api/users/**").authenticated()
-                    .requestMatchers("/api/monthly-saving-plan/**").authenticated()
-                    .requestMatchers("/api/period-comparisons/**").authenticated()
-                    .requestMatchers("/api/period-summaries/**").authenticated()
-                    .anyRequest().permitAll()
-            }
-            .exceptionHandling {
+                it
+                    .requestMatchers("/api/auth/**")
+                    .permitAll()
+                    .requestMatchers("/api/expenses/**")
+                    .authenticated()
+                    .requestMatchers("/api/budgets/**")
+                    .authenticated()
+                    .requestMatchers("/api/plans/**")
+                    .authenticated()
+                    .requestMatchers("/api/categories/**")
+                    .authenticated()
+                    .requestMatchers("/api/users/**")
+                    .authenticated()
+                    .requestMatchers("/api/monthly-saving-plan/**")
+                    .authenticated()
+                    .requestMatchers("/api/period-comparisons/**")
+                    .authenticated()
+                    .requestMatchers("/api/period-summaries/**")
+                    .authenticated()
+                    .anyRequest()
+                    .permitAll()
+            }.exceptionHandling {
                 it.authenticationEntryPoint { _, response, _ ->
                     response.sendError(HttpServletResponse.SC_UNAUTHORIZED)
                 }
-            }
-            .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter::class.java)
+            }.addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter::class.java)
 
         return http.build()
     }

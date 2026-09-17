@@ -24,15 +24,16 @@ import org.springframework.web.bind.annotation.RestController
 @RequestMapping("/api/plans/{planId}/items")
 class PlanItemController(
     private val planItemService: PlanItemService,
-    private val currentUserProvider: CurrentUserProvider
+    private val currentUserProvider: CurrentUserProvider,
 ) {
     @GetMapping
     fun listPlanItems(
         @PathVariable planId: Long,
-        @AuthenticationPrincipal userDetails: UserDetails
+        @AuthenticationPrincipal userDetails: UserDetails,
     ): ResponseEntity<*> {
-        val items = planItemService.listPlanItems(currentUserProvider.resolve(userDetails), planId)
-            ?: return ResponseEntity.status(HttpStatus.NOT_FOUND).body(mapOf("error" to "Plan not found"))
+        val items =
+            planItemService.listPlanItems(currentUserProvider.resolve(userDetails), planId)
+                ?: return ResponseEntity.status(HttpStatus.NOT_FOUND).body(mapOf("error" to "Plan not found"))
         return ResponseEntity.ok(items)
     }
 
@@ -40,7 +41,7 @@ class PlanItemController(
     fun createPlanItem(
         @AuthenticationPrincipal userDetails: UserDetails,
         @PathVariable planId: Long,
-        @RequestBody request: CreatePlanItemRequest
+        @RequestBody request: CreatePlanItemRequest,
     ): ResponseEntity<*> =
         when (val result = planItemService.createPlanItem(currentUserProvider.resolve(userDetails), planId, request)) {
             is CreatePlanItemResult.Success ->
@@ -55,11 +56,15 @@ class PlanItemController(
             is CreatePlanItemResult.CategoryNotFound ->
                 ResponseEntity.status(HttpStatus.BAD_REQUEST).body(mapOf("error" to "Category not found"))
 
-            is CreatePlanItemResult.OverBudgetWarning -> ResponseEntity.status(HttpStatus.CONFLICT)
-                .body(mapOf("error" to "over_budget", "remainingBudget" to result.remainingBudget))
+            is CreatePlanItemResult.OverBudgetWarning ->
+                ResponseEntity
+                    .status(HttpStatus.CONFLICT)
+                    .body(mapOf("error" to "over_budget", "remainingBudget" to result.remainingBudget))
 
-            is CreatePlanItemResult.DateOutsideRange -> ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                .body(mapOf("error" to "Date is outside the plan's date range"))
+            is CreatePlanItemResult.DateOutsideRange ->
+                ResponseEntity
+                    .status(HttpStatus.BAD_REQUEST)
+                    .body(mapOf("error" to "Date is outside the plan's date range"))
         }
 
     @PutMapping("/{itemId}")
@@ -67,38 +72,52 @@ class PlanItemController(
         @AuthenticationPrincipal userDetails: UserDetails,
         @PathVariable planId: Long,
         @PathVariable itemId: Long,
-        @RequestBody request: UpdatePlanItemRequest
+        @RequestBody request: UpdatePlanItemRequest,
     ): ResponseEntity<*> =
         when (val result = planItemService.updatePlanItem(currentUserProvider.resolve(userDetails), itemId, request)) {
             is UpdatePlanItemResult.Success -> ResponseEntity.ok(result.item)
-            is UpdatePlanItemResult.ItemNotFound -> ResponseEntity.status(HttpStatus.NOT_FOUND)
-                .body(mapOf("error" to "Plan item not found"))
+            is UpdatePlanItemResult.ItemNotFound ->
+                ResponseEntity
+                    .status(HttpStatus.NOT_FOUND)
+                    .body(mapOf("error" to "Plan item not found"))
 
-            is UpdatePlanItemResult.NotOwner -> ResponseEntity.status(HttpStatus.FORBIDDEN)
-                .body(mapOf("error" to "You do not own this plan"))
+            is UpdatePlanItemResult.NotOwner ->
+                ResponseEntity
+                    .status(HttpStatus.FORBIDDEN)
+                    .body(mapOf("error" to "You do not own this plan"))
 
-            is UpdatePlanItemResult.CategoryNotFound -> ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                .body(mapOf("error" to "Category not found"))
+            is UpdatePlanItemResult.CategoryNotFound ->
+                ResponseEntity
+                    .status(HttpStatus.BAD_REQUEST)
+                    .body(mapOf("error" to "Category not found"))
 
-            is UpdatePlanItemResult.OverBudgetWarning -> ResponseEntity.status(HttpStatus.CONFLICT)
-                .body(mapOf("error" to "over_budget", "remainingBudget" to result.remainingBudget))
+            is UpdatePlanItemResult.OverBudgetWarning ->
+                ResponseEntity
+                    .status(HttpStatus.CONFLICT)
+                    .body(mapOf("error" to "over_budget", "remainingBudget" to result.remainingBudget))
 
-            is UpdatePlanItemResult.DateOutsideRange -> ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                .body(mapOf("error" to "Date is outside the plan's date range"))
+            is UpdatePlanItemResult.DateOutsideRange ->
+                ResponseEntity
+                    .status(HttpStatus.BAD_REQUEST)
+                    .body(mapOf("error" to "Date is outside the plan's date range"))
         }
 
     @DeleteMapping("/{itemId}")
     fun delete(
         @AuthenticationPrincipal userDetails: UserDetails,
         @PathVariable planId: Long,
-        @PathVariable itemId: Long
+        @PathVariable itemId: Long,
     ): ResponseEntity<*> =
         when (val result = planItemService.deletePlanItem(currentUserProvider.resolve(userDetails), itemId)) {
             is DeletePlanItemResult.Success -> ResponseEntity.noContent().build<Unit>()
-            is DeletePlanItemResult.ItemNotFound -> ResponseEntity.status(HttpStatus.NOT_FOUND)
-                .body(mapOf("error" to "Plan item not found"))
+            is DeletePlanItemResult.ItemNotFound ->
+                ResponseEntity
+                    .status(HttpStatus.NOT_FOUND)
+                    .body(mapOf("error" to "Plan item not found"))
 
-            is DeletePlanItemResult.NotOwner -> ResponseEntity.status(HttpStatus.FORBIDDEN)
-                .body(mapOf("error" to "You do not own this plan"))
+            is DeletePlanItemResult.NotOwner ->
+                ResponseEntity
+                    .status(HttpStatus.FORBIDDEN)
+                    .body(mapOf("error" to "You do not own this plan"))
         }
 }

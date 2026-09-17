@@ -50,10 +50,9 @@ export class Expenses implements OnInit {
   route = inject(ActivatedRoute);
 
   reload$ = new ReplaySubject<void>();
-  expenses = toSignal(
-    this.reload$.pipe(mergeMap(() => this.service.getExpensesResult())),
-    { initialValue: { data: undefined, loading: true } },
-  );
+  expenses = toSignal(this.reload$.pipe(mergeMap(() => this.service.getExpensesResult())), {
+    initialValue: { data: undefined, loading: true },
+  });
 
   categories = signal<Category[]>([]);
 

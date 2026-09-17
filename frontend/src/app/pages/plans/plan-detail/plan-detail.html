@@ -4,8 +4,10 @@
       <h1 class="h3 mb-1">{{ plan()?.name ?? 'Plan' }}</h1>
       @if (plan(); as currentPlan) {
         <p class="text-body-secondary mb-0">
-          {{ currentPlan.startDate | date: 'mediumDate' }} – {{ currentPlan.endDate | date: 'mediumDate' }}
-          · {{ currentPlan.totalPlanned | currency }} spent of {{ currentPlan.totalBudget | currency }}
+          {{ currentPlan.startDate | date: 'mediumDate' }} –
+          {{ currentPlan.endDate | date: 'mediumDate' }} ·
+          {{ currentPlan.totalPlanned | currency }} spent of
+          {{ currentPlan.totalBudget | currency }}
         </p>
       }
     </div>
@@ -31,7 +33,10 @@
       </div>
       <div>
         <p class="text-body-secondary small mb-1">Spent of budget</p>
-        <p class="h4 mb-1">{{ plannedTotal() | currency }} <span class="text-body-secondary fs-6">/ {{ budget() | currency }}</span></p>
+        <p class="h4 mb-1">
+          {{ plannedTotal() | currency }}
+          <span class="text-body-secondary fs-6">/ {{ budget() | currency }}</span>
+        </p>
         @if (overBudget()) {
           <p class="mb-0 small text-danger">{{ overBy() | currency }} over budget</p>
         } @else {
@@ -65,12 +70,20 @@
                   <td>{{ item.description }}</td>
                   <td class="text-end fw-medium">{{ item.plannedAmount | currency }}</td>
                   <td class="text-end">
-                    <button type="button" class="btn btn-outline-danger btn-sm" (click)="onDeleteItem(item.id)">Delete</button>
+                    <button
+                      type="button"
+                      class="btn btn-outline-danger btn-sm"
+                      (click)="onDeleteItem(item.id)"
+                    >
+                      Delete
+                    </button>
                   </td>
                 </tr>
               } @empty {
                 <tr>
-                  <td colspan="5" class="text-center text-body-secondary py-4">No planned items yet.</td>
+                  <td colspan="5" class="text-center text-body-secondary py-4">
+                    No planned items yet.
+                  </td>
                 </tr>
               }
             </tbody>
@@ -92,7 +105,9 @@
             type="text"
             class="form-control"
             placeholder="Description"
-            [class.is-invalid]="newItemForm.description().touched() && newItemForm.description().invalid()"
+            [class.is-invalid]="
+              newItemForm.description().touched() && newItemForm.description().invalid()
+            "
             [formField]="newItemForm.description"
           />
           <div class="invalid-feedback">
@@ -106,7 +121,9 @@
             type="date"
             class="form-control"
             aria-label="Planned date"
-            [class.is-invalid]="newItemForm.plannedDate().touched() && newItemForm.plannedDate().invalid()"
+            [class.is-invalid]="
+              newItemForm.plannedDate().touched() && newItemForm.plannedDate().invalid()
+            "
             [formField]="newItemForm.plannedDate"
           />
           <div class="invalid-feedback">
@@ -123,7 +140,9 @@
               step="0.01"
               class="form-control"
               aria-label="Planned amount"
-              [class.is-invalid]="newItemForm.plannedAmount().touched() && newItemForm.plannedAmount().invalid()"
+              [class.is-invalid]="
+                newItemForm.plannedAmount().touched() && newItemForm.plannedAmount().invalid()
+              "
               [formField]="newItemForm.plannedAmount"
             />
             <div class="invalid-feedback">
@@ -134,7 +153,11 @@
           </div>
         </div>
         <div class="col-12 col-md-auto">
-          <button type="submit" class="btn btn-primary w-100" [disabled]="!newItemForm().valid() || newItemForm().submitting()">
+          <button
+            type="submit"
+            class="btn btn-primary w-100"
+            [disabled]="!newItemForm().valid() || newItemForm().submitting()"
+          >
             Add item
           </button>
         </div>
@@ -168,12 +191,20 @@
                   <td class="text-end fw-medium">{{ dailyPlan.allocatedAmount | currency }}</td>
                   <td class="text-end">{{ dailyPlan.actualSpent | currency }}</td>
                   <td class="text-end">
-                    <button type="button" class="btn btn-outline-danger btn-sm" (click)="onDeleteDailyPlan(dailyPlan.id)">Delete</button>
+                    <button
+                      type="button"
+                      class="btn btn-outline-danger btn-sm"
+                      (click)="onDeleteDailyPlan(dailyPlan.id)"
+                    >
+                      Delete
+                    </button>
                   </td>
                 </tr>
               } @empty {
                 <tr>
-                  <td colspan="4" class="text-center text-body-secondary py-4">No daily allocations yet.</td>
+                  <td colspan="4" class="text-center text-body-secondary py-4">
+                    No daily allocations yet.
+                  </td>
                 </tr>
               }
             </tbody>
@@ -187,7 +218,9 @@
             type="date"
             class="form-control"
             aria-label="Date"
-            [class.is-invalid]="newDailyPlanForm.date().touched() && newDailyPlanForm.date().invalid()"
+            [class.is-invalid]="
+              newDailyPlanForm.date().touched() && newDailyPlanForm.date().invalid()
+            "
             [formField]="newDailyPlanForm.date"
           />
           <div class="invalid-feedback">
@@ -204,7 +237,10 @@
               step="0.01"
               class="form-control"
               aria-label="Allocated amount"
-              [class.is-invalid]="newDailyPlanForm.allocatedAmount().touched() && newDailyPlanForm.allocatedAmount().invalid()"
+              [class.is-invalid]="
+                newDailyPlanForm.allocatedAmount().touched() &&
+                newDailyPlanForm.allocatedAmount().invalid()
+              "
               [formField]="newDailyPlanForm.allocatedAmount"
             />
             <div class="invalid-feedback">
@@ -215,7 +251,11 @@
           </div>
         </div>
         <div class="col-12 col-md-auto">
-          <button type="submit" class="btn btn-primary w-100" [disabled]="!newDailyPlanForm().valid() || newDailyPlanForm().submitting()">
+          <button
+            type="submit"
+            class="btn btn-primary w-100"
+            [disabled]="!newDailyPlanForm().valid() || newDailyPlanForm().submitting()"
+          >
             Add day
           </button>
         </div>

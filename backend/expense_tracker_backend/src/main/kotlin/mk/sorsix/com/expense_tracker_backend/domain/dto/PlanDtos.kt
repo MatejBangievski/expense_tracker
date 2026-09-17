@@ -6,14 +6,14 @@ data class CreatePlanRequest(
     val name: String,
     val startDate: LocalDate,
     val endDate: LocalDate,
-    val totalBudget: BigDecimal
+    val totalBudget: BigDecimal,
 )
 
 data class UpdatePlanRequest(
     val name: String,
     val startDate: LocalDate,
     val endDate: LocalDate,
-    val totalBudget: BigDecimal
+    val totalBudget: BigDecimal,
 )
 
 data class PlanResponse(
@@ -22,5 +22,5 @@ data class PlanResponse(
     val startDate: LocalDate,
     val endDate: LocalDate,
     val totalBudget: BigDecimal,
-    val totalPlanned: BigDecimal
+    val totalPlanned: BigDecimal,
 )

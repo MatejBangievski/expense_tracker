@@ -7,12 +7,12 @@ data class CreateBudgetRequest(
     val categoryId: Long,
     val budgetMonth: LocalDate,
     val monthlyLimit: BigDecimal,
-    val reason: String? = null
+    val reason: String? = null,
 )
 
 data class UpdateBudgetRequest(
     val monthlyLimit: BigDecimal,
-    val reason: String? = null
+    val reason: String? = null,
 )
 
 data class BudgetResponse(
@@ -22,5 +22,5 @@ data class BudgetResponse(
     val budgetMonth: LocalDate,
     val monthlyLimit: BigDecimal,
     val actualSpent: BigDecimal?,
-    val reason: String?
+    val reason: String?,
 )

@@ -27,7 +27,6 @@ class PeriodSummaryAdminController(
     private val periodSummaryService: PeriodSummaryService,
     private val clock: Clock,
 ) {
-
     /** POST /api/admin/period-summaries/run?periodType=MONTH&date=2026-07-01 */
     @PostMapping("/run")
     fun runForAllUsers(
@@ -46,8 +45,10 @@ class PeriodSummaryAdminController(
     ): ResponseEntity<*> =
         when (val result = periodSummaryService.generateForUser(userId, periodType, defaultStart(periodType, date))) {
             is GeneratePeriodSummaryResult.Success -> ResponseEntity.ok(result.summary)
-            is GeneratePeriodSummaryResult.UserNotFound -> ResponseEntity.status(HttpStatus.NOT_FOUND)
-                .body(mapOf("error" to "User not found"))
+            is GeneratePeriodSummaryResult.UserNotFound ->
+                ResponseEntity
+                    .status(HttpStatus.NOT_FOUND)
+                    .body(mapOf("error" to "User not found"))
         }
 
     /** GET /api/admin/period-summaries/users/1?periodType=MONTH&date=2026-07-01 — inspect without regenerating. */
@@ -60,11 +61,15 @@ class PeriodSummaryAdminController(
     ): ResponseEntity<*> =
         when (val result = periodSummaryService.find(userId, periodType, defaultStart(periodType, date))) {
             is FindPeriodSummaryResult.Success -> ResponseEntity.ok(result.summary)
-            is FindPeriodSummaryResult.SummaryNotFound -> ResponseEntity.status(HttpStatus.NOT_FOUND)
-                .body(mapOf("error" to "No summary for this user, period type and period"))
+            is FindPeriodSummaryResult.SummaryNotFound ->
+                ResponseEntity
+                    .status(HttpStatus.NOT_FOUND)
+                    .body(mapOf("error" to "No summary for this user, period type and period"))
         }
 
     /** Defaults to the previous period of the requested type when no date is supplied. */
-    private fun defaultStart(periodType: PeriodType, date: LocalDate?): LocalDate =
-        date ?: periodType.previous(periodType.startOf(LocalDate.now(clock)))
+    private fun defaultStart(
+        periodType: PeriodType,
+        date: LocalDate?,
+    ): LocalDate = date ?: periodType.previous(periodType.startOf(LocalDate.now(clock)))
 }

@@ -14,14 +14,16 @@ interface PlanItemRepository : JpaRepository<PlanItem, Long> {
     @EntityGraph(attributePaths = ["category", "plan"])
     fun findByPlanId(planId: Long): List<PlanItem>
 
-    @Query("""
+    @Query(
+        """
     SELECT COALESCE(SUM(p.plannedAmount), 0)
     FROM PlanItem p
     WHERE p.plan.id = :planId
       AND p.plannedDate = :date
-""")
+""",
+    )
     fun sumPlannedAmountByPlanAndDate(
         @Param("planId") planId: Long,
-        @Param("date") date: LocalDate
+        @Param("date") date: LocalDate,
     ): BigDecimal
 }

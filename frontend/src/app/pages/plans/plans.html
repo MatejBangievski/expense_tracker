@@ -22,15 +22,30 @@
             @for (plan of plans().data; track plan.id) {
               <tr>
                 <td>
-                  <a [routerLink]="['/plans', plan.id]" class="fw-medium text-decoration-none">{{ plan.name }}</a>
+                  <a [routerLink]="['/plans', plan.id]" class="fw-medium text-decoration-none">{{
+                    plan.name
+                  }}</a>
                 </td>
                 <td class="text-body-secondary">
-                  {{ plan.startDate | date: 'mediumDate' }} – {{ plan.endDate | date: 'mediumDate' }}
+                  {{ plan.startDate | date: 'mediumDate' }} –
+                  {{ plan.endDate | date: 'mediumDate' }}
                 </td>
-                <td class="text-end">{{ plan.totalPlanned | currency }} / {{ plan.totalBudget | currency }}</td>
+                <td class="text-end">
+                  {{ plan.totalPlanned | currency }} / {{ plan.totalBudget | currency }}
+                </td>
                 <td class="text-end text-nowrap">
-                  <a [routerLink]="['/plans/edit', plan.id]" class="btn btn-outline-secondary btn-sm me-1">Edit</a>
-                  <button type="button" class="btn btn-outline-danger btn-sm" (click)="onDelete(plan.id)">Delete</button>
+                  <a
+                    [routerLink]="['/plans/edit', plan.id]"
+                    class="btn btn-outline-secondary btn-sm me-1"
+                    >Edit</a
+                  >
+                  <button
+                    type="button"
+                    class="btn btn-outline-danger btn-sm"
+                    (click)="onDelete(plan.id)"
+                  >
+                    Delete
+                  </button>
                 </td>
               </tr>
             } @empty {

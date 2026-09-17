@@ -47,7 +47,9 @@ export class ExpenseForm implements OnInit {
       required(schemaPath.categoryId, { message: 'Category is required' });
       min(schemaPath.amount, 0.01, { message: 'Amount must be greater than 0' });
       required(schemaPath.expenseDate, { message: 'Date is required' });
-      maxLength(schemaPath.description, 200, { message: 'Description must be at most 200 characters' });
+      maxLength(schemaPath.description, 200, {
+        message: 'Description must be at most 200 characters',
+      });
     },
     {
       submission: {
@@ -96,7 +98,6 @@ export class ExpenseForm implements OnInit {
   ngOnInit(): void {
     this.categoryService.getCategories().subscribe((categories) => this.categories.set(categories));
     this.planService.getPlans().subscribe((plans) => this.plans.set(plans));
-
 
     this.route.paramMap
       .pipe(

@@ -32,31 +32,34 @@ export class Dashboard implements OnInit {
 
   reload$ = new ReplaySubject<void>();
 
-  user = toSignal(
-    this.reload$.pipe(mergeMap(() => this.userService.getCurrentUserResult())),
-    { initialValue: { data: undefined, loading: true } },
-  );
+  user = toSignal(this.reload$.pipe(mergeMap(() => this.userService.getCurrentUserResult())), {
+    initialValue: { data: undefined, loading: true },
+  });
 
   editing = signal(false);
   successMessage = signal('');
 
   profileModel = signal<ProfileForm>({ displayName: '', monthlySalary: 0 });
 
-  profileForm = form(this.profileModel, (schemaPath) => {
-    required(schemaPath.displayName, { message: 'Name is required' });
-    min(schemaPath.monthlySalary, 0, { message: 'Salary cannot be negative' });
-  }, {
-    submission: {
-      action: async (profileForm) => {
-        this.successMessage.set('');
-        this.userService.updateProfile(profileForm().value()).subscribe(() => {
-          this.successMessage.set('Profile updated');
-          this.editing.set(false);
-          this.reload$.next();
-        });
+  profileForm = form(
+    this.profileModel,
+    (schemaPath) => {
+      required(schemaPath.displayName, { message: 'Name is required' });
+      min(schemaPath.monthlySalary, 0, { message: 'Salary cannot be negative' });
+    },
+    {
+      submission: {
+        action: async (profileForm) => {
+          this.successMessage.set('');
+          this.userService.updateProfile(profileForm().value()).subscribe(() => {
+            this.successMessage.set('Profile updated');
+            this.editing.set(false);
+            this.reload$.next();
+          });
+        },
       },
     },
-  });
+  );
 
   passwordSuccess = signal('');
   passwordError = signal('');
@@ -67,7 +70,9 @@ export class Dashboard implements OnInit {
     (schemaPath) => {
       required(schemaPath.currentPassword, { message: 'Current password is required' });
       required(schemaPath.newPassword, { message: 'New password is required' });
-      minLength(schemaPath.newPassword, 6, { message: 'New password must be at least 6 characters' });
+      minLength(schemaPath.newPassword, 6, {
+        message: 'New password must be at least 6 characters',
+      });
     },
     {
       submission: {

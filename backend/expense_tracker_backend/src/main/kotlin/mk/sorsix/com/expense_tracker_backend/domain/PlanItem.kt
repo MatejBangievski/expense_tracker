@@ -13,15 +13,12 @@ import java.time.LocalDate
 data class PlanItem(
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     val id: Long = 0,
-
     @ManyToOne
     @JoinColumn(name = "plan_id")
     val plan: Plan = Plan(),
-
     @ManyToOne
     @JoinColumn(name = "category_id")
     val category: Category? = null,
-
     val description: String = "",
     val plannedDate: LocalDate = LocalDate.now(),
     val plannedAmount: BigDecimal = BigDecimal.ZERO,

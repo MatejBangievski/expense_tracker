@@ -28,7 +28,9 @@
                 id="password"
                 type="password"
                 class="form-control"
-                [class.is-invalid]="loginForm.password().touched() && loginForm.password().invalid()"
+                [class.is-invalid]="
+                  loginForm.password().touched() && loginForm.password().invalid()
+                "
                 [formField]="loginForm.password"
               />
               <div class="invalid-feedback">

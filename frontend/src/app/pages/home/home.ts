@@ -55,7 +55,12 @@ export class Home implements OnInit {
 
   compareWithPreviousMonth(): void {
     this.router.navigate(['/comparison'], {
-      queryParams: { type: 'MONTH', current: this.thisMonthStart, previous: this.prevMonthStart, run: 1 },
+      queryParams: {
+        type: 'MONTH',
+        current: this.thisMonthStart,
+        previous: this.prevMonthStart,
+        run: 1,
+      },
     });
   }
 

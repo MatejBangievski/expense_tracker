@@ -6,18 +6,16 @@ import { Expense, ExpenseFilter, TopCategory } from '../models/expense';
 
 @Service()
 export class ExpenseService {
-
   http = inject(HttpClient);
 
   getExpenses(filter: ExpenseFilter = {}): Observable<Expense[]> {
-    return this.http.get<Expense[]>(`/api/expenses`, {  params: this.buildParams(filter), });
+    return this.http.get<Expense[]>(`/api/expenses`, { params: this.buildParams(filter) });
   }
 
   getExpensesResult(filter: ExpenseFilter = {}): Observable<Result<Expense[]>> {
-    return this.http.get<Expense[]>(`/api/expenses`, { params: this.buildParams(filter),
-    }).pipe(
-      map((result) => ({ data: result, loading: false })),
-    );
+    return this.http
+      .get<Expense[]>(`/api/expenses`, { params: this.buildParams(filter) })
+      .pipe(map((result) => ({ data: result, loading: false })));
   }
 
   getExpenseById(id: number): Observable<Expense | undefined> {
@@ -40,11 +38,26 @@ export class ExpenseService {
       .pipe(map((response) => response.total));
   }
 
-  save(expense: { categoryId: number; amount: number; expenseDate: string; description: string; confirmOverBudget?: boolean }) {
+  save(expense: {
+    categoryId: number;
+    amount: number;
+    expenseDate: string;
+    description: string;
+    confirmOverBudget?: boolean;
+  }) {
     return this.http.post<Expense>(`/api/expenses`, expense);
   }
 
-  update(id: number, expense: { categoryId: number; amount: number; expenseDate: string; description: string; confirmOverBudget?: boolean }) {
+  update(
+    id: number,
+    expense: {
+      categoryId: number;
+      amount: number;
+      expenseDate: string;
+      description: string;
+      confirmOverBudget?: boolean;
+    },
+  ) {
     return this.http.put<Expense>(`/api/expenses/${id}`, expense);
   }
 

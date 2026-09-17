@@ -11,22 +11,16 @@ import java.math.BigDecimal
 @Entity
 @Table(name = "app_user")
 data class User(
-
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     val id: Long = 0,
-
     val displayName: String = "",
-
     @Column(unique = true, nullable = false)
     val email: String = "",
-
     @Column(nullable = false)
     val passwordHash: String = "",
-
     val monthlySalary: BigDecimal = BigDecimal.ZERO,
     val totalSaved: BigDecimal = BigDecimal.ZERO,
-
     @Column(name = "gemini_api_key")
     val aiApiKey: String? = null,
 )

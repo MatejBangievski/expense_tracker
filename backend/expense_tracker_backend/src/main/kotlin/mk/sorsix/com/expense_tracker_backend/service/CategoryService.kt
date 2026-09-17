@@ -17,12 +17,14 @@ import org.springframework.stereotype.Service
 class CategoryService(
     private val categoryRepository: CategoryRepository,
     private val budgetRepository: BudgetRepository,
-    private val expenseRepository: ExpenseRepository
+    private val expenseRepository: ExpenseRepository,
 ) {
-
     fun findCategoryById(id: Long): Category? = categoryRepository.findByIdOrNull(id)
 
-    fun rootOf(category: Category, byId: Map<Long, Category>): Category {
+    fun rootOf(
+        category: Category,
+        byId: Map<Long, Category>,
+    ): Category {
         var current = category
         val seen = mutableSetOf(current.id)
         while (true) {
@@ -32,50 +34,63 @@ class CategoryService(
         }
     }
 
-    fun categoriesById(userId: Long): Map<Long, Category> =
-        categoryRepository.findByUserIsNullOrUserId(userId).associateBy { it.id }
+    fun categoriesById(userId: Long): Map<Long, Category> = categoryRepository.findByUserIsNullOrUserId(userId).associateBy { it.id }
 
-    fun listAllCategories(user: User): List<CategoryResponse> =
-        categoryRepository.findByUserIsNullOrUserId(user.id).map { it.toResponse() }
+    fun listAllCategories(user: User): List<CategoryResponse> = categoryRepository.findByUserIsNullOrUserId(user.id).map { it.toResponse() }
 
-    fun createCategory(user: User, request: CategoryRequest): CreateCategoryResult {
+    fun createCategory(
+        user: User,
+        request: CategoryRequest,
+    ): CreateCategoryResult {
         if (categoryRepository.findByNameIgnoreCase(request.name) != null) {
             return CreateCategoryResult.NameAlreadyExists
         }
 
-        val parent = request.parentCategoryId?.let {
-            categoryRepository.findByIdOrNull(it) ?: return CreateCategoryResult.ParentCategoryNotFound
-        }
+        val parent =
+            request.parentCategoryId?.let {
+                categoryRepository.findByIdOrNull(it) ?: return CreateCategoryResult.ParentCategoryNotFound
+            }
 
-        val savedCategory = categoryRepository.save(
-            Category(
-                name = request.name,
-                parentCategory = parent,
-                user = user
+        val savedCategory =
+            categoryRepository.save(
+                Category(
+                    name = request.name,
+                    parentCategory = parent,
+                    user = user,
+                ),
             )
-        )
         return CreateCategoryResult.Success(savedCategory.toResponse())
     }
 
-    fun updateCategory(user: User, id: Long, request: CategoryRequest): UpdateCategoryResult {
-        val existingCategory = findCategoryById(id)
-            ?: return UpdateCategoryResult.CategoryNotFound
+    fun updateCategory(
+        user: User,
+        id: Long,
+        request: CategoryRequest,
+    ): UpdateCategoryResult {
+        val existingCategory =
+            findCategoryById(id)
+                ?: return UpdateCategoryResult.CategoryNotFound
 
-        val categoryOwner = existingCategory.user
-            ?: return UpdateCategoryResult.CannotEditDefault
+        val categoryOwner =
+            existingCategory.user
+                ?: return UpdateCategoryResult.CannotEditDefault
 
         if (categoryOwner.id != user.id) {
             return UpdateCategoryResult.NotOwner
         }
-        val parent = request.parentCategoryId?.let {
-            categoryRepository.findById(it).orElse(null) ?: return UpdateCategoryResult.ParentCategoryNotFound
-        }
+        val parent =
+            request.parentCategoryId?.let {
+                categoryRepository.findById(it).orElse(null) ?: return UpdateCategoryResult.ParentCategoryNotFound
+            }
 
         val updated = categoryRepository.save(existingCategory.copy(name = request.name, parentCategory = parent))
         return UpdateCategoryResult.Success(updated.toResponse())
     }
 
-    fun deleteCategory(user: User, id: Long): DeleteCategoryResult {
+    fun deleteCategory(
+        user: User,
+        id: Long,
+    ): DeleteCategoryResult {
         val existingCategory = findCategoryById(id) ?: return DeleteCategoryResult.CategoryNotFound
         val categoryOwner = existingCategory.user ?: return DeleteCategoryResult.CannotDeleteDefault
         if (categoryOwner.id != user.id) {
@@ -89,12 +104,12 @@ class CategoryService(
         return DeleteCategoryResult.Success
     }
 
-
-    private fun Category.toResponse() = CategoryResponse(
-        id = id,
-        name = name,
-        parentCategoryId = parentCategory?.id,
-        parentCategoryName = parentCategory?.name,
-        isDefault = user == null
-    )
+    private fun Category.toResponse() =
+        CategoryResponse(
+            id = id,
+            name = name,
+            parentCategoryId = parentCategory?.id,
+            parentCategoryName = parentCategory?.name,
+            isDefault = user == null,
+        )
 }

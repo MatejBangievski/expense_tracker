@@ -6,7 +6,7 @@ import java.time.LocalDate
 data class DailyPlanRequest(
     val date: LocalDate,
     val allocatedAmount: BigDecimal,
-    val confirmOverBudget: Boolean? = false
+    val confirmOverBudget: Boolean? = false,
 )
 
 data class DailyPlanResponse(
@@ -14,5 +14,5 @@ data class DailyPlanResponse(
     val planId: Long,
     val date: LocalDate,
     val allocatedAmount: BigDecimal,
-    val actualSpent: BigDecimal
+    val actualSpent: BigDecimal,
 )

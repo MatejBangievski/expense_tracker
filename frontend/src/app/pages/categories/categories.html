@@ -11,12 +11,12 @@
       <div class="table-responsive">
         <table class="table table-hover align-middle mb-0">
           <thead>
-          <tr>
-            <th>Name</th>
-            <th>Parent</th>
-            <th>Type</th>
-            <th></th>
-          </tr>
+            <tr>
+              <th>Name</th>
+              <th>Parent</th>
+              <th>Type</th>
+              <th></th>
+            </tr>
           </thead>
           <tbody>
             @for (category of categoryList; track category.id) {
@@ -32,8 +32,18 @@
                 </td>
                 <td class="text-end text-nowrap">
                   @if (!category.default) {
-                    <a [routerLink]="['/categories/edit', category.id]" class="btn btn-outline-secondary btn-sm me-1">Edit</a>
-                    <button type="button" class="btn btn-outline-danger btn-sm" (click)="onDelete(category.id)">Delete</button>
+                    <a
+                      [routerLink]="['/categories/edit', category.id]"
+                      class="btn btn-outline-secondary btn-sm me-1"
+                      >Edit</a
+                    >
+                    <button
+                      type="button"
+                      class="btn btn-outline-danger btn-sm"
+                      (click)="onDelete(category.id)"
+                    >
+                      Delete
+                    </button>
                   }
                 </td>
               </tr>

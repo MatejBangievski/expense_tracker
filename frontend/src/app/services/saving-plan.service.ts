@@ -2,22 +2,23 @@ import { HttpClient } from '@angular/common/http';
 import { inject, Service } from '@angular/core';
 import { Observable, catchError, map, of } from 'rxjs';
 import { Result } from '../models/result';
-import { CurrentSpending, GenerateAiRequest, ManualSavingPlanRequest, SavingPlan } from '../models/saving-plan';
+import {
+  CurrentSpending,
+  GenerateAiRequest,
+  ManualSavingPlanRequest,
+  SavingPlan,
+} from '../models/saving-plan';
 
 @Service()
 export class SavingPlanService {
   http = inject(HttpClient);
 
   getCurrentPlan(): Observable<SavingPlan | null> {
-    return this.http.get<SavingPlan>(`/api/monthly-saving-plan`).pipe(
-      catchError(() => of(null)),
-    );
+    return this.http.get<SavingPlan>(`/api/monthly-saving-plan`).pipe(catchError(() => of(null)));
   }
 
   getCurrentPlanResult(): Observable<Result<SavingPlan | null>> {
-    return this.getCurrentPlan().pipe(
-      map((data) => ({ data, loading: false }))
-    );
+    return this.getCurrentPlan().pipe(map((data) => ({ data, loading: false })));
   }
 
   getCurrentSpending(): Observable<CurrentSpending> {

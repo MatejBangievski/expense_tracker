@@ -1,16 +1,15 @@
 package mk.sorsix.com.expense_tracker_backend.api
 
-import mk.sorsix.com.expense_tracker_backend.AbstractIntegrationTest
-
 import com.fasterxml.jackson.databind.ObjectMapper
+import mk.sorsix.com.expense_tracker_backend.AbstractIntegrationTest
 import mk.sorsix.com.expense_tracker_backend.TestUser
 import mk.sorsix.com.expense_tracker_backend.registerAndLogin
+import org.hamcrest.Matchers.nullValue
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc
-import org.hamcrest.Matchers.nullValue
 import org.springframework.http.MediaType
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.get
@@ -23,11 +22,16 @@ import java.time.LocalDate
 @SpringBootTest
 @AutoConfigureMockMvc
 class PeriodComparisonControllerTest : AbstractIntegrationTest() {
-
     @Autowired lateinit var mockMvc: MockMvc
+
     @Autowired lateinit var objectMapper: ObjectMapper
 
-    private fun postExpense(user: TestUser, categoryId: Long, amount: String, date: LocalDate) {
+    private fun postExpense(
+        user: TestUser,
+        categoryId: Long,
+        amount: String,
+        date: LocalDate,
+    ) {
         mockMvc.post("/api/expenses") {
             contentType = MediaType.APPLICATION_JSON
             header("Authorization", "Bearer ${user.accessToken}")
@@ -35,14 +39,17 @@ class PeriodComparisonControllerTest : AbstractIntegrationTest() {
         }
     }
 
-    private fun compareWithPrevious(user: TestUser, useAi: Boolean = false) =
-        mockMvc.post("/api/period-comparisons/previous?periodType=MONTH&useAi=$useAi") {
-            header("Authorization", "Bearer ${user.accessToken}")
-        }
+    private fun compareWithPrevious(
+        user: TestUser,
+        useAi: Boolean = false,
+    ) = mockMvc.post("/api/period-comparisons/previous?periodType=MONTH&useAi=$useAi") {
+        header("Authorization", "Bearer ${user.accessToken}")
+    }
 
     @Test
     fun `comparison requires authentication`() {
-        mockMvc.post("/api/period-comparisons/previous?periodType=MONTH")
+        mockMvc
+            .post("/api/period-comparisons/previous?periodType=MONTH")
             .andExpect { status { isUnauthorized() } }
     }
 
@@ -71,14 +78,15 @@ class PeriodComparisonControllerTest : AbstractIntegrationTest() {
         postExpense(user, 5, "80.00", LocalDate.now())
         postExpense(user, 5, "150.00", LocalDate.now().minusMonths(1))
 
-        mockMvc.get("/api/period-summaries?periodType=MONTH") {
-            header("Authorization", "Bearer ${user.accessToken}")
-        }.andExpect {
-            status { isOk() }
-            jsonPath("$.length()") { value(2) }
-            jsonPath("$[0].periodStart") { exists() }
-            jsonPath("$[0].totalSpent") { exists() }
-        }
+        mockMvc
+            .get("/api/period-summaries?periodType=MONTH") {
+                header("Authorization", "Bearer ${user.accessToken}")
+            }.andExpect {
+                status { isOk() }
+                jsonPath("$.length()") { value(2) }
+                jsonPath("$[0].periodStart") { exists() }
+                jsonPath("$[0].totalSpent") { exists() }
+            }
     }
 
     @Test
@@ -102,13 +110,14 @@ class PeriodComparisonControllerTest : AbstractIntegrationTest() {
     fun `comparing periods of different types returns 400`() {
         val user = mockMvc.registerAndLogin(objectMapper)
 
-        mockMvc.post("/api/period-comparisons") {
-            contentType = MediaType.APPLICATION_JSON
-            header("Authorization", "Bearer ${user.accessToken}")
-            content = """{"currentPeriodType":"WEEK","currentDate":"2026-07-06","previousPeriodType":"MONTH","previousDate":"2026-06-01"}"""
-        }.andExpect {
-            status { isBadRequest() }
-            jsonPath("$.error") { exists() }
-        }
+        mockMvc
+            .post("/api/period-comparisons") {
+                contentType = MediaType.APPLICATION_JSON
+                header("Authorization", "Bearer ${user.accessToken}")
+                content = """{"currentPeriodType":"WEEK","currentDate":"2026-07-06","previousPeriodType":"MONTH","previousDate":"2026-06-01"}"""
+            }.andExpect {
+                status { isBadRequest() }
+                jsonPath("$.error") { exists() }
+            }
     }
 }

@@ -4,7 +4,12 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { ComparisonService } from '../../services/comparison.service';
 import { UserService } from '../../services/user.service';
-import { AvailablePeriod, PeriodComparison, PeriodType, periodLabel } from '../../models/period-comparison';
+import {
+  AvailablePeriod,
+  PeriodComparison,
+  PeriodType,
+  periodLabel,
+} from '../../models/period-comparison';
 import { Spinner } from '../../shared/spinner/spinner';
 import { Icon } from '../../shared/icon/icon';
 import { BaseChartDirective } from 'ng2-charts';
@@ -124,7 +129,11 @@ export class Comparison implements OnInit {
     return type.charAt(0) + type.slice(1).toLowerCase();
   }
 
-  private loadPeriods(preferredCurrent?: string | null, preferredPrevious?: string | null, autoRun = false): void {
+  private loadPeriods(
+    preferredCurrent?: string | null,
+    preferredPrevious?: string | null,
+    autoRun = false,
+  ): void {
     this.comparisonService.availablePeriods(this.periodType()).subscribe((periods) => {
       this.periods.set(periods);
       this.periodA.set(preferredCurrent || periods[0]?.periodStart || '');

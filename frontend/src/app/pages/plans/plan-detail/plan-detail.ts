@@ -85,22 +85,22 @@ export class PlanDetail implements OnInit {
     categoryId: '0',
     description: '',
     plannedDate: '',
-    plannedAmount: 0
+    plannedAmount: 0,
   });
 
   newItemForm = form(
     this.newItemModel,
     (schemaPath) => {
       required(schemaPath.description, {
-        message: 'Description is required'
+        message: 'Description is required',
       });
 
       required(schemaPath.plannedDate, {
-        message: 'Date is required'
+        message: 'Date is required',
       });
 
       min(schemaPath.plannedAmount, 0.01, {
-        message: 'Amount must be greater than 0'
+        message: 'Amount must be greater than 0',
       });
     },
     {
@@ -108,25 +108,25 @@ export class PlanDetail implements OnInit {
         action: async (form) => {
           await this.submitItem(form().value(), false);
           return;
-        }
-      }
-    }
+        },
+      },
+    },
   );
 
   newDailyPlanModel = signal<NewDailyPlanForm>({
     date: '',
-    allocatedAmount: 0
+    allocatedAmount: 0,
   });
 
   newDailyPlanForm = form(
     this.newDailyPlanModel,
     (schemaPath) => {
       required(schemaPath.date, {
-        message: 'Date is required'
+        message: 'Date is required',
       });
 
       min(schemaPath.allocatedAmount, 0.01, {
-        message: 'Amount must be greater than 0'
+        message: 'Amount must be greater than 0',
       });
     },
     {
@@ -134,9 +134,9 @@ export class PlanDetail implements OnInit {
         action: async (form) => {
           await this.submitDailyPlan(form().value(), false);
           return;
-        }
-      }
-    }
+        },
+      },
+    },
   );
 
   ngOnInit(): void {
@@ -149,15 +149,11 @@ export class PlanDetail implements OnInit {
       .getPlans()
       .subscribe((plans) => this.plan.set(plans.find((plan) => plan.id === this.planId)));
 
-    this.categoryService
-      .getCategories()
-      .subscribe((categories) => this.categories.set(categories));
+    this.categoryService.getCategories().subscribe((categories) => this.categories.set(categories));
   }
 
   loadItems(): void {
-    this.itemService
-      .getPlanItems(this.planId)
-      .subscribe((items) => this.items.set(items));
+    this.itemService.getPlanItems(this.planId).subscribe((items) => this.items.set(items));
   }
 
   loadDailyPlans(): void {
@@ -167,20 +163,16 @@ export class PlanDetail implements OnInit {
   }
 
   onDeleteItem(itemId: number): void {
-    this.itemService
-      .deleteItem(this.planId, itemId)
-      .subscribe(() => {
-        this.loadItems();
-        this.loadDailyPlans();
-      });
+    this.itemService.deleteItem(this.planId, itemId).subscribe(() => {
+      this.loadItems();
+      this.loadDailyPlans();
+    });
   }
 
   onDeleteDailyPlan(dailyPlanId: number): void {
-    this.dailyPlanService
-      .deleteDailyPlan(this.planId, dailyPlanId)
-      .subscribe(() => {
-        this.loadDailyPlans();
-      });
+    this.dailyPlanService.deleteDailyPlan(this.planId, dailyPlanId).subscribe(() => {
+      this.loadDailyPlans();
+    });
   }
 
   async submitItem(value: NewItemForm, confirmOverBudget: boolean) {
@@ -191,13 +183,11 @@ export class PlanDetail implements OnInit {
       description: value.description,
       plannedDate: value.plannedDate,
       plannedAmount: value.plannedAmount,
-      confirmOverBudget
+      confirmOverBudget,
     };
 
     try {
-      await firstValueFrom(
-        this.itemService.save(this.planId, request)
-      );
+      await firstValueFrom(this.itemService.save(this.planId, request));
 
       this.loadItems();
       this.loadDailyPlans();
@@ -206,15 +196,14 @@ export class PlanDetail implements OnInit {
         categoryId: '0',
         description: '',
         plannedDate: '',
-        plannedAmount: 0
+        plannedAmount: 0,
       });
-
     } catch (error: any) {
       if (error.error?.error === 'over_budget') {
         const remaining = error.error.remainingBudget;
 
         const confirmed = confirm(
-          `This exceeds your remaining plan budget of ${remaining}. Add it anyway?`
+          `This exceeds your remaining plan budget of ${remaining}. Add it anyway?`,
         );
 
         if (confirmed) {
@@ -228,47 +217,37 @@ export class PlanDetail implements OnInit {
     }
   }
 
-  async submitDailyPlan(
-    value: NewDailyPlanForm,
-    confirmOverBudget: boolean
-  ): Promise<void> {
+  async submitDailyPlan(value: NewDailyPlanForm, confirmOverBudget: boolean): Promise<void> {
     this.dailyPlanError.set('');
 
     const request = {
       date: value.date,
       allocatedAmount: value.allocatedAmount,
-      confirmOverBudget
+      confirmOverBudget,
     };
 
     try {
-      await firstValueFrom(
-        this.dailyPlanService.save(this.planId, request)
-      );
+      await firstValueFrom(this.dailyPlanService.save(this.planId, request));
 
       this.loadDailyPlans();
 
       this.newDailyPlanForm().reset({
         date: '',
-        allocatedAmount: 0
+        allocatedAmount: 0,
       });
-
     } catch (error: any) {
-
       if (error.error?.error === 'over_budget') {
         const remaining = error.error.remainingBudget;
 
         const confirmed = confirm(
-          `This exceeds your remaining plan budget of ${remaining}. Allocate it anyway?`
+          `This exceeds your remaining plan budget of ${remaining}. Allocate it anyway?`,
         );
 
         if (confirmed) {
           await this.submitDailyPlan(value, true);
         }
-
       } else {
-        this.dailyPlanError.set(
-          'Could not add daily allocation'
-        );
+        this.dailyPlanError.set('Could not add daily allocation');
       }
     }
   }

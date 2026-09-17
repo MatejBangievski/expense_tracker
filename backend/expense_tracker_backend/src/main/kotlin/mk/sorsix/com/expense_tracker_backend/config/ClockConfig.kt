@@ -6,10 +6,10 @@ import org.springframework.context.annotation.Configuration
 import java.time.Clock
 import java.time.ZoneId
 
-
 @Configuration
 class ClockConfig {
     @Bean
-    fun clock(@Value("\${app.scheduling.zone:Europe/Skopje}") zone: String): Clock =
-        Clock.system(ZoneId.of(zone))
+    fun clock(
+        @Value("\${app.scheduling.zone:Europe/Skopje}") zone: String,
+    ): Clock = Clock.system(ZoneId.of(zone))
 }

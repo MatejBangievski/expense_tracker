@@ -27,7 +27,9 @@ export class CategoryForm implements OnInit {
   });
 
   selectedParent = computed(() =>
-    this.categories().find((category) => String(category.id) === this.categoryModel().parentCategoryId),
+    this.categories().find(
+      (category) => String(category.id) === this.categoryModel().parentCategoryId,
+    ),
   );
 
   categoryForm = form(
@@ -63,7 +65,9 @@ export class CategoryForm implements OnInit {
       .pipe(
         map((params) => params.get('id')),
         mergeMap((id) =>
-          id ? this.service.getCategories().pipe(map((all) => all.find((c) => c.id === +id))) : of(undefined),
+          id
+            ? this.service.getCategories().pipe(map((all) => all.find((c) => c.id === +id)))
+            : of(undefined),
         ),
       )
       .subscribe((category) => {

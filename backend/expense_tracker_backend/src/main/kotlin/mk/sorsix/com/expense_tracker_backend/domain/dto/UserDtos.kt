@@ -4,7 +4,7 @@ import java.math.BigDecimal
 
 data class UpdateUserRequest(
     val displayName: String,
-    val monthlySalary: BigDecimal
+    val monthlySalary: BigDecimal,
 )
 
 data class UserResponse(
@@ -12,7 +12,7 @@ data class UserResponse(
     val displayName: String,
     val email: String,
     val monthlySalary: BigDecimal,
-    val totalSaved: BigDecimal
+    val totalSaved: BigDecimal,
 )
 
 data class SetApiKeyRequest(

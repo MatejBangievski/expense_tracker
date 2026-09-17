@@ -15,10 +15,9 @@ export class Plans implements OnInit {
   service = inject(PlanService);
   reload$ = new ReplaySubject<void>();
 
-  plans = toSignal(
-    this.reload$.pipe(mergeMap(() => this.service.getPlansResult())),
-    { initialValue: { data: undefined, loading: true } },
-  );
+  plans = toSignal(this.reload$.pipe(mergeMap(() => this.service.getPlansResult())), {
+    initialValue: { data: undefined, loading: true },
+  });
 
   ngOnInit(): void {
     this.reload$.next();

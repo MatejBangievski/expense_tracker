@@ -8,7 +8,12 @@
     <div class="card-body">
       <div class="row g-2 align-items-center">
         <div class="col-12 col-md">
-          <input type="text" class="form-control" placeholder="Search expenses..." [formField]="filterForm.q" />
+          <input
+            type="text"
+            class="form-control"
+            placeholder="Search expenses..."
+            [formField]="filterForm.q"
+          />
         </div>
 
         <div class="col-12 col-md-auto">
@@ -24,8 +29,22 @@
           <mat-form-field appearance="outline" subscriptSizing="dynamic" class="filter-daterange">
             <mat-label>Date range</mat-label>
             <mat-date-range-input [rangePicker]="picker">
-              <input matStartDate placeholder="Start" readonly [value]="startDateValue()" (dateChange)="onStartDateChange($event)" (click)="picker.open()" />
-              <input matEndDate placeholder="End" readonly [value]="endDateValue()" (dateChange)="onEndDateChange($event)" (click)="picker.open()" />
+              <input
+                matStartDate
+                placeholder="Start"
+                readonly
+                [value]="startDateValue()"
+                (dateChange)="onStartDateChange($event)"
+                (click)="picker.open()"
+              />
+              <input
+                matEndDate
+                placeholder="End"
+                readonly
+                [value]="endDateValue()"
+                (dateChange)="onEndDateChange($event)"
+                (click)="picker.open()"
+              />
             </mat-date-range-input>
             <mat-datepicker-toggle matIconSuffix [for]="picker"></mat-datepicker-toggle>
             <mat-date-range-picker #picker></mat-date-range-picker>
@@ -33,7 +52,9 @@
         </div>
 
         <div class="col-12 col-md-auto">
-          <button type="button" class="btn btn-outline-secondary" (click)="resetFilters()">Reset filters</button>
+          <button type="button" class="btn btn-outline-secondary" (click)="resetFilters()">
+            Reset filters
+          </button>
         </div>
       </div>
     </div>

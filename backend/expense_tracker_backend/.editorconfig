@@ -1,0 +1,10 @@
+root = true
+
+[*.{kt,kts}]
+# Relax a few noisy rules so the existing codebase passes cleanly.
+ktlint_standard_no-wildcard-imports = disabled
+ktlint_standard_max-line-length = disabled
+ktlint_standard_function-naming = disabled
+ktlint_standard_class-naming = disabled
+ktlint_standard_filename = disabled
+ktlint_standard_package-name = disabled

@@ -28,22 +28,24 @@ import org.springframework.web.bind.annotation.RestController
 @RequestMapping("/api/users/me")
 class UserController(
     private val userService: UserService,
-    private val currentUserProvider: CurrentUserProvider
+    private val currentUserProvider: CurrentUserProvider,
 ) {
-
     @GetMapping
-    fun getProfile(@AuthenticationPrincipal userDetails: UserDetails): UserResponse =
-        userService.getProfile(currentUserProvider.resolve(userDetails))
+    fun getProfile(
+        @AuthenticationPrincipal userDetails: UserDetails,
+    ): UserResponse = userService.getProfile(currentUserProvider.resolve(userDetails))
 
     @PutMapping
     fun updateProfile(
         @AuthenticationPrincipal userDetails: UserDetails,
-        @RequestBody request: UpdateUserRequest
+        @RequestBody request: UpdateUserRequest,
     ): ResponseEntity<*> =
         when (val result = userService.updateProfile(currentUserProvider.resolve(userDetails), request)) {
             is UpdateUserResult.Success -> ResponseEntity.ok(result.user)
-            is UpdateUserResult.UserNotFound -> ResponseEntity.status(HttpStatus.NOT_FOUND)
-                .body(mapOf("error" to "User not found"))
+            is UpdateUserResult.UserNotFound ->
+                ResponseEntity
+                    .status(HttpStatus.NOT_FOUND)
+                    .body(mapOf("error" to "User not found"))
         }
 
     @PutMapping("/api-key")
@@ -55,40 +57,46 @@ class UserController(
             ApiKeyResponse(
                 userService.setApiKey(
                     currentUserProvider.resolve(userDetails),
-                    request.apiKey
-                )
-            )
+                    request.apiKey,
+                ),
+            ),
         )
 
     @GetMapping("/api-key")
     fun getApiKey(
         @AuthenticationPrincipal userDetails: UserDetails,
         @RequestParam(defaultValue = "true") masked: Boolean,
-    ): ResponseEntity<ApiKeyResponse> =
-        ResponseEntity.ok(ApiKeyResponse(userService.getApiKey(currentUserProvider.resolve(userDetails), masked)))
+    ): ResponseEntity<ApiKeyResponse> = ResponseEntity.ok(ApiKeyResponse(userService.getApiKey(currentUserProvider.resolve(userDetails), masked)))
 
     @DeleteMapping("/api-key")
-    fun clearApiKey(@AuthenticationPrincipal userDetails: UserDetails): ResponseEntity<Void> {
+    fun clearApiKey(
+        @AuthenticationPrincipal userDetails: UserDetails,
+    ): ResponseEntity<Void> {
         userService.clearApiKey(currentUserProvider.resolve(userDetails))
         return ResponseEntity.noContent().build()
     }
 
     @PostMapping("/api-key/validate")
-    fun validateApiKey(@RequestBody request: ValidateApiKeyRequest): ResponseEntity<ValidateApiKeyResponse> =
-        ResponseEntity.ok(ValidateApiKeyResponse(userService.validateApiKey(request.apiKey)))
+    fun validateApiKey(
+        @RequestBody request: ValidateApiKeyRequest,
+    ): ResponseEntity<ValidateApiKeyResponse> = ResponseEntity.ok(ValidateApiKeyResponse(userService.validateApiKey(request.apiKey)))
 
     @PutMapping("/password")
     fun changePassword(
         @AuthenticationPrincipal userDetails: UserDetails,
         @RequestBody request: ChangePasswordRequest,
     ): ResponseEntity<*> =
-        when (userService.changePassword(
-            currentUserProvider.resolve(userDetails),
-            request.currentPassword,
-            request.newPassword
-        )) {
+        when (
+            userService.changePassword(
+                currentUserProvider.resolve(userDetails),
+                request.currentPassword,
+                request.newPassword,
+            )
+        ) {
             is ChangePasswordResult.Success -> ResponseEntity.ok(mapOf("message" to "Password updated"))
-            is ChangePasswordResult.InvalidCurrentPassword -> ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                .body(mapOf("error" to "Current password is incorrect"))
+            is ChangePasswordResult.InvalidCurrentPassword ->
+                ResponseEntity
+                    .status(HttpStatus.BAD_REQUEST)
+                    .body(mapOf("error" to "Current password is incorrect"))
         }
 }

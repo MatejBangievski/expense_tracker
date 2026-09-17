@@ -17,7 +17,6 @@ import { Landing } from './pages/landing/landing';
 import { Home } from './pages/home/home';
 import { MainLayout } from './layout/main-layout/main-layout';
 
-
 export const routes: Routes = [
   { path: '', component: Landing },
   { path: 'login', component: Login },
@@ -45,5 +44,5 @@ export const routes: Routes = [
       { path: 'comparison', component: Comparison },
     ],
   },
-  { path: '**', redirectTo: '/home' }
+  { path: '**', redirectTo: '/home' },
 ];

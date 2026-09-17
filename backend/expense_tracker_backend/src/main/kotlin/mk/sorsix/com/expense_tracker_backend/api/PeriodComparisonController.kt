@@ -29,17 +29,27 @@ class PeriodComparisonController(
         @RequestBody request: ComparePeriodsRequest,
         @RequestParam(defaultValue = "false") useAi: Boolean,
     ): ResponseEntity<*> =
-        when (val result = periodComparisonService.compare(
-            currentUserProvider.resolve(userDetails),
-            request.currentPeriodType, request.currentDate,
-            request.previousPeriodType, request.previousDate, useAi,
-        )) {
+        when (
+            val result =
+                periodComparisonService.compare(
+                    currentUserProvider.resolve(userDetails),
+                    request.currentPeriodType,
+                    request.currentDate,
+                    request.previousPeriodType,
+                    request.previousDate,
+                    useAi,
+                )
+        ) {
             is GeneratePeriodComparisonResult.Success -> ResponseEntity.ok(result.comparison)
-            is GeneratePeriodComparisonResult.SamePeriod -> ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                .body(mapOf("error" to "Cannot compare a period with itself"))
+            is GeneratePeriodComparisonResult.SamePeriod ->
+                ResponseEntity
+                    .status(HttpStatus.BAD_REQUEST)
+                    .body(mapOf("error" to "Cannot compare a period with itself"))
 
-            is GeneratePeriodComparisonResult.InadequatePeriods -> ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                .body(mapOf("error" to "Periods must be of the same type (WEEK, MONTH or YEAR)"))
+            is GeneratePeriodComparisonResult.InadequatePeriods ->
+                ResponseEntity
+                    .status(HttpStatus.BAD_REQUEST)
+                    .body(mapOf("error" to "Periods must be of the same type (WEEK, MONTH or YEAR)"))
         }
 
     @PostMapping("/previous")
@@ -50,14 +60,24 @@ class PeriodComparisonController(
         @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) date: LocalDate?,
         @RequestParam(defaultValue = "false") useAi: Boolean,
     ): ResponseEntity<*> =
-        when (val result = periodComparisonService.compareWithPreviousPeriod(
-            currentUserProvider.resolve(userDetails), periodType, date, useAi,
-        )) {
+        when (
+            val result =
+                periodComparisonService.compareWithPreviousPeriod(
+                    currentUserProvider.resolve(userDetails),
+                    periodType,
+                    date,
+                    useAi,
+                )
+        ) {
             is GeneratePeriodComparisonResult.Success -> ResponseEntity.ok(result.comparison)
-            is GeneratePeriodComparisonResult.SamePeriod -> ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                .body(mapOf("error" to "Cannot compare a period with itself"))
+            is GeneratePeriodComparisonResult.SamePeriod ->
+                ResponseEntity
+                    .status(HttpStatus.BAD_REQUEST)
+                    .body(mapOf("error" to "Cannot compare a period with itself"))
 
-            is GeneratePeriodComparisonResult.InadequatePeriods -> ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                .body(mapOf("error" to "Periods must be of the same type (WEEK, MONTH or YEAR)"))
+            is GeneratePeriodComparisonResult.InadequatePeriods ->
+                ResponseEntity
+                    .status(HttpStatus.BAD_REQUEST)
+                    .body(mapOf("error" to "Periods must be of the same type (WEEK, MONTH or YEAR)"))
         }
 }

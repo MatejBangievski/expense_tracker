@@ -1,0 +1,24 @@
+# Secrets / local env
+.env
+
+# IDE
+.idea/
+*.iml
+*.iws
+
+# Java / Gradle (backend)
+build/
+.gradle/
+
+# Node / Angular (frontend)
+node_modules/
+dist/
+.angular/
+
+# Logs & OS
+*.log
+.DS_Store
+
+# Jenkins study artifacts (not used)
+jenkins-data/
+jenkins-docker-certs/

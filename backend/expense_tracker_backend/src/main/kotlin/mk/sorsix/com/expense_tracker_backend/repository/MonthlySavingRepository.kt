@@ -8,11 +8,17 @@ import java.math.BigDecimal
 import java.time.LocalDate
 
 interface MonthlySavingRepository : JpaRepository<MonthlySaving, Long> {
-    fun findByUserIdAndSavingMonth(userId: Long, savingMonth: LocalDate): MonthlySaving?
+    fun findByUserIdAndSavingMonth(
+        userId: Long,
+        savingMonth: LocalDate,
+    ): MonthlySaving?
 
     @Query(
         "SELECT COALESCE(SUM(m.totalSaved), 0) FROM MonthlySaving m " +
-            "WHERE m.user.id = :userId AND m.savingMonth < :beforeMonth AND m.totalSaved > 0"
+            "WHERE m.user.id = :userId AND m.savingMonth < :beforeMonth AND m.totalSaved > 0",
     )
-    fun sumTotalSavedBefore(@Param("userId") userId: Long, @Param("beforeMonth") beforeMonth: LocalDate): BigDecimal
+    fun sumTotalSavedBefore(
+        @Param("userId") userId: Long,
+        @Param("beforeMonth") beforeMonth: LocalDate,
+    ): BigDecimal
 }

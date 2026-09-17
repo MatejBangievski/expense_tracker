@@ -17,36 +17,42 @@ import java.math.BigDecimal
 @Service
 class PlanService(
     private val planItemRepository: PlanItemRepository,
-    private val planRepository: PlanRepository
+    private val planRepository: PlanRepository,
 ) {
-    fun findPlanById(id: Long): Plan? {
-        return planRepository.findByIdOrNull(id)
-    }
+    fun findPlanById(id: Long): Plan? = planRepository.findByIdOrNull(id)
 
-    fun listPlans(user: User): List<PlanResponse> =
-        planRepository.findByUserId(user.id).map { it.toResponse() }
+    fun listPlans(user: User): List<PlanResponse> = planRepository.findByUserId(user.id).map { it.toResponse() }
 
-    fun createPlan(user: User, request: CreatePlanRequest): CreatePlanResult {
+    fun createPlan(
+        user: User,
+        request: CreatePlanRequest,
+    ): CreatePlanResult {
         if (request.endDate.isBefore(request.startDate)) {
             return CreatePlanResult.InvalidDateRange
         }
 
-        val saved = planRepository.save(
-            Plan(
-                user = user,
-                name = request.name,
-                startDate = request.startDate,
-                endDate = request.endDate,
-                totalBudget = request.totalBudget
+        val saved =
+            planRepository.save(
+                Plan(
+                    user = user,
+                    name = request.name,
+                    startDate = request.startDate,
+                    endDate = request.endDate,
+                    totalBudget = request.totalBudget,
+                ),
             )
-        )
 
         return CreatePlanResult.Success(saved.toResponse())
     }
 
-    fun updatePlan(user: User, planId: Long, request: UpdatePlanRequest): UpdatePlanResult {
-        val existing = findPlanById(planId)
-            ?: return UpdatePlanResult.PlanNotFound
+    fun updatePlan(
+        user: User,
+        planId: Long,
+        request: UpdatePlanRequest,
+    ): UpdatePlanResult {
+        val existing =
+            findPlanById(planId)
+                ?: return UpdatePlanResult.PlanNotFound
 
         if (existing.user.id != user.id) {
             return UpdatePlanResult.NotOwner
@@ -56,21 +62,26 @@ class PlanService(
             return UpdatePlanResult.InvalidDateRange
         }
 
-        val updated = planRepository.save(
-            existing.copy(
-                name = request.name,
-                startDate = request.startDate,
-                endDate = request.endDate,
-                totalBudget = request.totalBudget
+        val updated =
+            planRepository.save(
+                existing.copy(
+                    name = request.name,
+                    startDate = request.startDate,
+                    endDate = request.endDate,
+                    totalBudget = request.totalBudget,
+                ),
             )
-        )
 
         return UpdatePlanResult.Success(updated.toResponse())
     }
 
-    fun deletePlan(user: User, planId: Long): DeletePlanResult {
-        val existing = findPlanById(planId)
-            ?: return DeletePlanResult.PlanNotFound
+    fun deletePlan(
+        user: User,
+        planId: Long,
+    ): DeletePlanResult {
+        val existing =
+            findPlanById(planId)
+                ?: return DeletePlanResult.PlanNotFound
 
         if (existing.user.id != user.id) {
             return DeletePlanResult.NotOwner
@@ -81,8 +92,10 @@ class PlanService(
     }
 
     private fun Plan.toResponse(): PlanResponse {
-        val totalPlanned = planItemRepository.findByPlanId(id)
-            .fold(BigDecimal.ZERO) { sum, item -> sum + item.plannedAmount }
+        val totalPlanned =
+            planItemRepository
+                .findByPlanId(id)
+                .fold(BigDecimal.ZERO) { sum, item -> sum + item.plannedAmount }
 
         return PlanResponse(
             id = id,
@@ -90,7 +103,7 @@ class PlanService(
             startDate = startDate,
             endDate = endDate,
             totalBudget = totalBudget,
-            totalPlanned = totalPlanned
+            totalPlanned = totalPlanned,
         )
     }
 }

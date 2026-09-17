@@ -19,14 +19,14 @@ export class AuthService {
   });
 
   login(request: LoginRequest) {
-    return this.http.post<AuthTokens>(`/api/auth/login`, request).pipe(
-      tap((tokens) => this.storeTokens(tokens)),
-    );
+    return this.http
+      .post<AuthTokens>(`/api/auth/login`, request)
+      .pipe(tap((tokens) => this.storeTokens(tokens)));
   }
   register(request: RegisterRequest) {
-    return this.http.post<AuthTokens>(`/api/auth/register`, request).pipe(
-      tap((tokens) => this.storeTokens(tokens)),
-    );
+    return this.http
+      .post<AuthTokens>(`/api/auth/register`, request)
+      .pipe(tap((tokens) => this.storeTokens(tokens)));
   }
 
   logout() {
@@ -35,9 +35,9 @@ export class AuthService {
     if (!token) {
       return of(undefined);
     }
-    return this.http.post(`/api/auth/logout`, { refreshToken: token }).pipe(
-      catchError(() => of(undefined)),
-    );
+    return this.http
+      .post(`/api/auth/logout`, { refreshToken: token })
+      .pipe(catchError(() => of(undefined)));
   }
   private storeTokens(tokens: AuthTokens) {
     this.accessToken.set(tokens.accessToken);

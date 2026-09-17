@@ -6,7 +6,9 @@ import org.springframework.data.jpa.repository.JpaRepository
 
 interface CategoryRepository : JpaRepository<Category, Long> {
     fun findByNameIgnoreCase(name: String): Category?
+
     fun findByNameIgnoreCaseIn(names: Collection<String>): List<Category>
+
     @EntityGraph(attributePaths = ["parentCategory", "user"])
     fun findByUserIsNullOrUserId(userId: Long): List<Category>
 }

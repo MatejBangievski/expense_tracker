@@ -34,7 +34,7 @@ const CATEGORY_ICON_MAP: Record<string, string> = {
 };
 
 export const categoryIcon = (name?: string | null): string =>
-  name ? CATEGORY_ICON_MAP[name.trim().toLowerCase()] ?? 'generic' : 'generic';
+  name ? (CATEGORY_ICON_MAP[name.trim().toLowerCase()] ?? 'generic') : 'generic';
 
 export const categoryColor = (name: string): string => {
   let hash = 0;

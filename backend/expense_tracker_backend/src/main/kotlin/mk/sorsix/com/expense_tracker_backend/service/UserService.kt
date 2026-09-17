@@ -1,6 +1,5 @@
 package mk.sorsix.com.expense_tracker_backend.service
 
-
 import mk.sorsix.com.expense_tracker_backend.config.UserChatClientProvider
 import mk.sorsix.com.expense_tracker_backend.domain.*
 import mk.sorsix.com.expense_tracker_backend.domain.dto.ChangePasswordResult
@@ -23,23 +22,33 @@ class UserService(
     private val monthlySavingRepository: MonthlySavingRepository,
     private val clock: Clock,
 ) {
-
     fun getProfile(user: User): UserResponse = user.toResponse()
 
-    fun updateProfile(user: User, request: UpdateUserRequest): UpdateUserResult {
-        val existing = userRepository.findById(user.id).orElse(null)
-            ?: return UpdateUserResult.UserNotFound
+    fun updateProfile(
+        user: User,
+        request: UpdateUserRequest,
+    ): UpdateUserResult {
+        val existing =
+            userRepository.findById(user.id).orElse(null)
+                ?: return UpdateUserResult.UserNotFound
 
-        val updated = userRepository.save(
-            existing.copy(displayName = request.displayName, monthlySalary = request.monthlySalary)
-        )
+        val updated =
+            userRepository.save(
+                existing.copy(displayName = request.displayName, monthlySalary = request.monthlySalary),
+            )
 
         return UpdateUserResult.Success(updated.toResponse())
     }
 
-    fun setApiKey(user: User, apiKey: String): String? = getApiKey(userRepository.save(user.copy(aiApiKey = encryptionService.encrypt(apiKey))), masked = true)
+    fun setApiKey(
+        user: User,
+        apiKey: String,
+    ): String? = getApiKey(userRepository.save(user.copy(aiApiKey = encryptionService.encrypt(apiKey))), masked = true)
 
-    fun getApiKey(user: User, masked: Boolean): String? {
+    fun getApiKey(
+        user: User,
+        masked: Boolean,
+    ): String? {
         val plain = user.aiApiKey?.let(encryptionService::decrypt) ?: return null
         return if (masked) "…${plain.takeLast(4)}" else plain
     }
@@ -48,7 +57,11 @@ class UserService(
 
     fun validateApiKey(apiKey: String): Boolean = userChatClientProvider.validate(apiKey)
 
-    fun changePassword(user: User, currentPassword: String, newPassword: String): ChangePasswordResult {
+    fun changePassword(
+        user: User,
+        currentPassword: String,
+        newPassword: String,
+    ): ChangePasswordResult {
         if (!passwordEncoder.matches(currentPassword, user.passwordHash)) {
             return ChangePasswordResult.InvalidCurrentPassword
         }
@@ -56,11 +69,12 @@ class UserService(
         return ChangePasswordResult.Success
     }
 
-    private fun User.toResponse() = UserResponse(
-        id = id,
-        displayName = displayName,
-        email = email,
-        monthlySalary = monthlySalary,
-        totalSaved = monthlySavingRepository.sumTotalSavedBefore(id, LocalDate.now(clock).withDayOfMonth(1)),
-    )
+    private fun User.toResponse() =
+        UserResponse(
+            id = id,
+            displayName = displayName,
+            email = email,
+            monthlySalary = monthlySalary,
+            totalSaved = monthlySavingRepository.sumTotalSavedBefore(id, LocalDate.now(clock).withDayOfMonth(1)),
+        )
 }

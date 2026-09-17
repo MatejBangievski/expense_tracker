@@ -80,7 +80,10 @@ export class ExpensesOverview {
     if (!segment?.link) {
       return;
     }
-    this.router.navigate(segment.link, segment.queryParams ? { queryParams: segment.queryParams } : {});
+    this.router.navigate(
+      segment.link,
+      segment.queryParams ? { queryParams: segment.queryParams } : {},
+    );
   }
 
   private buildSegments(expenses: Expense[]): CategorySegment[] {
@@ -95,14 +98,16 @@ export class ExpensesOverview {
       return [];
     }
 
-    const segments: CategorySegment[] = sorted.slice(0, MAX_CATEGORIES).map(([name, amount], index) => ({
-      name,
-      amount,
-      share: amount / total,
-      color: chartColor(index),
-      link: ['/expenses'],
-      queryParams: { categoryName: name },
-    }));
+    const segments: CategorySegment[] = sorted
+      .slice(0, MAX_CATEGORIES)
+      .map(([name, amount], index) => ({
+        name,
+        amount,
+        share: amount / total,
+        color: chartColor(index),
+        link: ['/expenses'],
+        queryParams: { categoryName: name },
+      }));
 
     const othersAmount = sorted.slice(MAX_CATEGORIES).reduce((sum, [, amount]) => sum + amount, 0);
     if (othersAmount > 0) {

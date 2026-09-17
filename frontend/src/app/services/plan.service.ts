@@ -13,9 +13,9 @@ export class PlanService {
   }
 
   getPlansResult(): Observable<Result<Plan[]>> {
-    return this.http.get<Plan[]>(`/api/plans`).pipe(
-      map((result) => ({ data: result, loading: false })),
-    );
+    return this.http
+      .get<Plan[]>(`/api/plans`)
+      .pipe(map((result) => ({ data: result, loading: false })));
   }
 
   save(request: PlanRequest) {
