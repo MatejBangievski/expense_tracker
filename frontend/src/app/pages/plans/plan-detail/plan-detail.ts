@@ -2,6 +2,7 @@ import { Component, computed, inject, OnInit, signal } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { form, FormField, FormRoot, required, min } from '@angular/forms/signals';
 import { firstValueFrom } from 'rxjs';
+import { HttpErrorResponse } from '@angular/common/http';
 import { BaseChartDirective } from 'ng2-charts';
 import { ChartData, ChartOptions } from 'chart.js';
 import { PlanItemService } from '../../../services/plan-item.service';
@@ -198,9 +199,10 @@ export class PlanDetail implements OnInit {
         plannedDate: '',
         plannedAmount: 0,
       });
-    } catch (error: any) {
-      if (error.error?.error === 'over_budget') {
-        const remaining = error.error.remainingBudget;
+    } catch (error) {
+      const e = error as HttpErrorResponse;
+      if (e.error?.error === 'over_budget') {
+        const remaining = e.error.remainingBudget;
 
         const confirmed = confirm(
           `This exceeds your remaining plan budget of ${remaining}. Add it anyway?`,
@@ -209,8 +211,8 @@ export class PlanDetail implements OnInit {
         if (confirmed) {
           await this.submitItem(value, true);
         }
-      } else if (error.error?.error) {
-        this.itemError.set(error.error.error);
+      } else if (e.error?.error) {
+        this.itemError.set(e.error.error);
       } else {
         this.itemError.set('Could not add item');
       }
@@ -235,9 +237,10 @@ export class PlanDetail implements OnInit {
         date: '',
         allocatedAmount: 0,
       });
-    } catch (error: any) {
-      if (error.error?.error === 'over_budget') {
-        const remaining = error.error.remainingBudget;
+    } catch (error) {
+      const e = error as HttpErrorResponse;
+      if (e.error?.error === 'over_budget') {
+        const remaining = e.error.remainingBudget;
 
         const confirmed = confirm(
           `This exceeds your remaining plan budget of ${remaining}. Allocate it anyway?`,
