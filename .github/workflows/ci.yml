@@ -132,9 +132,11 @@ jobs:
           # Pin the overlay to THIS commit's immutable image tag -> the tag change is what makes
           # Kubernetes perform a rolling update (a fixed :latest would not).
           cd k8s-azure
+          # Target the image name AFTER the base's rename (base rewrites the short name to
+          # <user>/expense-tracker-*), so the overlay's tag override actually matches and applies.
           kustomize edit set image \
-            expense-tracker-backend=${{ secrets.DOCKERHUB_USERNAME }}/expense-tracker-backend:${{ github.sha }} \
-            expense-tracker-frontend=${{ secrets.DOCKERHUB_USERNAME }}/expense-tracker-frontend:${{ github.sha }}
+            ${{ secrets.DOCKERHUB_USERNAME }}/expense-tracker-backend=${{ secrets.DOCKERHUB_USERNAME }}/expense-tracker-backend:${{ github.sha }} \
+            ${{ secrets.DOCKERHUB_USERNAME }}/expense-tracker-frontend=${{ secrets.DOCKERHUB_USERNAME }}/expense-tracker-frontend:${{ github.sha }}
           kubectl apply -k .
           kubectl -n expense-tracker rollout status deploy/backend  --timeout=300s
           kubectl -n expense-tracker rollout status deploy/frontend --timeout=300s
