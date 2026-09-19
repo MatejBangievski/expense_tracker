@@ -278,9 +278,115 @@ Kept as we go, so the report can mention what broke and why.
   ```
   Take-away: on Apple Silicon always publish multi-arch images, or the local cluster can't pull them.
 
-## Next: CD → Azure — TODO
-Kubernetes manifests are done and verified locally on k3d (see section 5). Remaining:
-- Provision **Azure** (AKS or Container Apps) with the student credit; push images there / from Docker Hub.
-- Add an automated GitHub Actions **deploy** job that runs after the images job (`kubectl apply -k k8s/`
-  + rollout) against the Azure cluster, using a kubeconfig/credentials secret.
-- When scaling the backend >1 there, add leader-election/ShedLock so the summary cron doesn't double-run.
+### 6. AKS create rejected — subscription region policy (Azure for Students)
+- **Symptom:** `az aks create` in `westeurope` failed with `(RequestDisallowedByAzure) … This policy
+  maintains a set of best available regions where your subscription can deploy resources.`
+- **Cause:** the **Azure for Students** subscription has an *Allowed resource deployment regions*
+  policy; `westeurope` isn't in it.
+- **Fix:** discover the allowed regions and deploy into one of them:
+  ```bash
+  az policy assignment list -o json | python3 -c "import sys,json;[print(a['parameters']) for a in json.load(sys.stdin) if a.get('parameters') and 'listOfAllowedLocations' in a['parameters']]"
+  ```
+  Allowed here: `germanywestcentral, italynorth, spaincentral, austriaeast, belgiumcentral`. Recreated
+  the resource group and cluster in **`germanywestcentral`**.
+
+### 7. AKS create rejected — resource providers not registered
+- **Symptom:** `(MissingSubscriptionRegistration) The subscription is not registered to use namespace
+  'Microsoft.ContainerService'`.
+- **Cause:** a brand-new subscription hasn't registered the AKS resource providers yet.
+- **Fix:** register them once (async, ~1–3 min), wait, then retry:
+  ```bash
+  for ns in Microsoft.ContainerService Microsoft.Network Microsoft.Compute Microsoft.Storage Microsoft.OperationalInsights; do az provider register --namespace $ns; done
+  az provider show -n Microsoft.ContainerService --query registrationState -o tsv   # wait for 'Registered'
+  ```
+
+### 8. AKS create rejected — VM size not allowed in the region
+- **Symptom:** `(BadRequest) The VM size of Standard_B2s is not allowed in your subscription in
+  location 'germanywestcentral'.` (the B-series burstable SKUs aren't offered to the student sub here).
+- **Cause:** Azure for Students restricts both regions *and* VM SKUs; the allowed list for this region
+  is D/E/F/L/M families (e.g. the smallest `standard_d2s_v7`, `standard_f2as_v6`).
+- **Fix:** pick an allowed small SKU — used **`Standard_D2s_v7`** (2 vCPU / 8 GB). List what's allowed:
+  `az vm list-skus -l germanywestcentral --size Standard_D2 --output table`, or read the SKU list Azure
+  prints in the error.
+
+### 9. No VM SKU both available *and* with quota in most allowed regions
+- **Symptom:** after picking an allowed region, `az aks create` still failed — either the SKU was
+  `NotAvailableForSubscription`, or `(ErrCode_InsufficientVCPUQuota) … remaining 0 for family …`.
+  In `germanywestcentral`/`italynorth`/`spaincentral` the *intersection* of "SKU available to this
+  subscription" and "family has vCPU quota > 0" was **empty**.
+- **Cause:** Azure for Students limits both which SKUs each region offers *and* the per-family vCPU
+  quota (mostly 0–4). The allowed-region policy and the quota grants don't line up in every region.
+- **Fix:** script the intersection across the allowed regions — for each region, list VM SKUs with no
+  `restrictions`, keep 2-vCPU ones, and check the family's remaining quota via `az vm list-usage`.
+  Only **`austriaeast`** and **`belgiumcentral`** had a match: `Standard_DS2_v2_Promo`
+  (family `standardDSv2PromoFamily`, quota 4). Deployed there.
+- Note: the policy's "Not registered" *compliance state* in the portal is just the scan status — the
+  allowed-regions parameter was already populated (confirmed via `az policy assignment list`), so this
+  was a SKU/quota problem, not a wait-for-policy-provisioning one.
+
+## 6. Azure (AKS) hosting + automated CD
+
+The same manifests run on **Azure Kubernetes Service (AKS)**. AKS nodes are **amd64**, so the Docker
+Hub images (`matejbangievski/expense-tracker-{backend,frontend}`) pull natively — no local
+build/import as on the arm64 Mac. Only two things differ from k3d, so they live in a small **Kustomize
+overlay** (`k8s-azure/`) that reuses the base `k8s/` and patches just the Ingress; the local k3d flow
+(`kubectl apply -k k8s/`) is unchanged.
+
+### Provision (one-time, `az`)
+```bash
+az account set --subscription "<student-subscription-id>"
+RG=expense-rg; LOC=austriaeast; AKS=expense-aks
+az group create -n $RG -l $LOC
+az aks create -g $RG -n $AKS --location $LOC --node-count 1 \
+  --node-vm-size Standard_DS2_v2_Promo --node-osdisk-size 32 --generate-ssh-keys --tier free
+az aks approuting enable -g $RG -n $AKS      # managed NGINX ingress controller (AKS ships none by default)
+az aks get-credentials -g $RG -n $AKS        # point kubectl at AKS
+```
+Control plane is free (`--tier free`); you pay only for the node VM. Region and VM size are heavily
+constrained by the student subscription (see issues #6/#8/#9). The combo that actually works:
+**`austriaeast`** + **`Standard_DS2_v2_Promo`** (2 vCPU / 7 GB, premium-storage capable). Delete
+everything when done: `az group delete -n $RG --yes --no-wait`.
+
+### The Azure overlay — `k8s-azure/`
+| File | Purpose |
+|---|---|
+| `kustomization.yaml` | `resources: [../k8s]` (reuse the whole base) + patch the Ingress. Sibling of `k8s/`, not inside it, to avoid Kustomize's self-containment cycle. |
+| `ingress-patch.yaml` | Swaps `ingressClassName: traefik` → **`webapprouting.kubernetes.azure.com`** (app-routing's NGINX) and drops the `expense.localhost` host so the rule is a **catch-all** reachable at the LB's public IP. |
+
+Storage needs no change: the DB `volumeClaimTemplates` sets no `storageClassName`, so on AKS it uses
+the default **`managed-csi`** (Azure Disk) automatically.
+
+### First deploy + verify
+```bash
+kubectl apply -k k8s-azure
+kubectl -n expense-tracker rollout status statefulset/db
+kubectl -n expense-tracker rollout status deploy/backend deploy/frontend
+IP=$(kubectl -n expense-tracker get ingress expense-tracker -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
+curl -i "http://$IP/"                                   # SPA -> 200
+curl -i -X POST "http://$IP/api/auth/login" -H 'Content-Type: application/json' \
+  -d '{"email":"demo@demo.com","password":"demo1234"}'  # full chain -> 200
+```
+
+### Automated CD (rolling update from Docker Hub)
+Kubernetes does **not** auto-pull a new image on a fixed tag. So the CD job pins the deployment to
+this commit's **immutable `:<git-sha>`** tag — that tag change is what triggers a zero-downtime
+`RollingUpdate`.
+
+1. Store the AKS admin kubeconfig as a GitHub secret (cert-based → no service principal needed, which
+   the university tenant may block):
+   ```bash
+   az aks get-credentials -g $RG -n $AKS --admin -f - | base64 | pbcopy
+   ```
+   GitHub → Settings → Secrets and variables → Actions → new secret **`KUBE_CONFIG`** (paste).
+2. The `deploy` job in `.github/workflows/ci.yml` (`needs: [images]`, only on push to **develop**):
+   installs kubectl + kustomize, decodes `KUBE_CONFIG`, runs
+   `kustomize edit set image …:${{ github.sha }}`, `kubectl apply -k k8s-azure`, then
+   `kubectl rollout status`. So: push to develop → `images` builds/pushes `:<sha>` → `deploy` rolls
+   AKS onto it. Rollback: `kubectl -n expense-tracker rollout undo deploy/backend`.
+
+The `deploy` job only rolls the app tiers; the Postgres StatefulSet is applied idempotently and keeps
+its PVC across redeploys.
+
+### Backend scaling caveat on Azure
+Still `replicas: 1` because of the `@Scheduled` cron (see section 5). To scale it on AKS, add ShedLock
+/ leader-election first, then bump replicas.

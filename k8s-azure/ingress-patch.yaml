@@ -1,0 +1,19 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: expense-tracker
+spec:
+  # AKS app-routing addon's managed NGINX controller (replaces k3d's traefik class).
+  ingressClassName: webapprouting.kubernetes.azure.com
+  # Host-less catch-all: the app is reachable at the load balancer's public IP (http://<public-ip>/).
+  # (spec.rules has no merge key, so this replaces the base rule that used host expense.localhost.)
+  rules:
+    - http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: frontend
+                port:
+                  number: 80
