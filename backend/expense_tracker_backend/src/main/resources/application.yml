@@ -19,11 +19,9 @@ spring:
         chat:
           model: gemini-3.6-flash
 jwt:
-#  treba da se smeni so environment variable, so ne se cuva vo git
   secret: ${JWT_SECRET:dev-fallback-secret-at-least-32-bytes-long-for-local-testing}
 app:
   security:
-    # isto, ova e za da ne se chuva raw api key
     encryption-key: ${ENCRYPTION_KEY:dev-fallback-encryption-secret-change-in-prod}
   scheduling:
     zone: Europe/Skopje
