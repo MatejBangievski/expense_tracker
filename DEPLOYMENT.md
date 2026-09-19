@@ -324,6 +324,18 @@ Kept as we go, so the report can mention what broke and why.
   allowed-regions parameter was already populated (confirmed via `az policy assignment list`), so this
   was a SKU/quota problem, not a wait-for-policy-provisioning one.
 
+### 10. CD "succeeded" but nothing rolled — layered Kustomize image transform
+- **Symptom:** the first `deploy` run was green but the pods didn't change; the apply log showed
+  `deployment.apps/backend unchanged`, and the live image was still `:latest`.
+- **Cause:** the **base** `k8s/kustomization.yaml` already rewrites the short image name
+  `expense-tracker-backend` → `<user>/expense-tracker-backend:latest`. The overlay's
+  `kustomize edit set image expense-tracker-backend=…:<sha>` ran *after* that, so the image name it
+  tried to match (`expense-tracker-backend`) no longer existed in the built output → no override.
+- **Fix:** target the **post-rename** name in the CD job:
+  `kustomize edit set image <user>/expense-tracker-backend=<user>/expense-tracker-backend:<sha>`.
+  Verified with `kubectl kustomize k8s-azure` (image now shows the SHA), after which the deploy rolled
+  the app pods to the SHA image while leaving the DB StatefulSet untouched.
+
 ## 6. Azure (AKS) hosting + automated CD
 
 The same manifests run on **Azure Kubernetes Service (AKS)**. AKS nodes are **amd64**, so the Docker
