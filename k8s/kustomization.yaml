@@ -1,0 +1,25 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: expense-tracker
+
+resources:
+  - namespace.yaml
+  - db-configmap.yaml
+  - db-secret.yaml
+  - db-service.yaml
+  - db-statefulset.yaml
+  - backend-configmap.yaml
+  - backend-secret.yaml
+  - backend-deployment.yaml
+  - backend-service.yaml
+  - frontend-deployment.yaml
+  - frontend-service.yaml
+  - ingress.yaml
+images:
+  - name: expense-tracker-backend
+    newName: matejbangievski/expense-tracker-backend
+    newTag: latest
+  - name: expense-tracker-frontend
+    newName: matejbangievski/expense-tracker-frontend
+    newTag: latest
