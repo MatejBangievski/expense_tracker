@@ -72,4 +72,5 @@ allOpen {
 
 tasks.withType<Test> {
     useJUnitPlatform()
+    systemProperty("user.timezone", "Europe/Skopje")
 }
