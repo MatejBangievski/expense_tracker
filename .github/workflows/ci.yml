@@ -106,3 +106,32 @@ jobs:
             ${{ secrets.DOCKERHUB_USERNAME }}/expense-tracker-frontend:${{ github.sha }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+  deploy:
+    needs: [images]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/develop'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Set up kubectl
+        uses: azure/setup-kubectl@v4
+
+      - name: Install kustomize
+        run: |
+          curl -sSL "https://github.com/kubernetes-sigs/kustomize/releases/download/kustomize%2Fv5.4.3/kustomize_v5.4.3_linux_amd64.tar.gz" | tar xz
+          sudo mv kustomize /usr/local/bin/
+
+      - name: Deploy to AKS (rolling update to the git-SHA image)
+        env:
+          KUBECONFIG: ${{ github.workspace }}/kubeconfig
+        run: |
+          printf '%s' "${{ secrets.KUBE_CONFIG }}" | base64 -d > "$KUBECONFIG"
+          cd k8s-azure
+          # SHA tag change triggers the rolling update; use the base-renamed image name so it applies.
+          kustomize edit set image \
+            ${{ secrets.DOCKERHUB_USERNAME }}/expense-tracker-backend=${{ secrets.DOCKERHUB_USERNAME }}/expense-tracker-backend:${{ github.sha }} \
+            ${{ secrets.DOCKERHUB_USERNAME }}/expense-tracker-frontend=${{ secrets.DOCKERHUB_USERNAME }}/expense-tracker-frontend:${{ github.sha }}
+          kubectl apply -k .
+          kubectl -n expense-tracker rollout status deploy/backend  --timeout=300s
+          kubectl -n expense-tracker rollout status deploy/frontend --timeout=300s
